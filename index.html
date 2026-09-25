@@ -744,6 +744,83 @@ try{Object.assign(S,JSON.parse(localStorage.getItem('coreCombat120')||'{}'))}cat
    }
  };
 })();
+</script>
+<style id="MILESTONE140_ALL_SYSTEMS">
+#all140{position:fixed;left:10px;bottom:10px;z-index:10001;max-width:290px;background:rgba(5,9,16,.9);border:1px solid #ffffff25;border-radius:12px;padding:8px;color:#fff;font:11px Arial;backdrop-filter:blur(6px)}
+#all140 button{margin:2px;padding:6px 8px;border:0;border-radius:7px;background:#ffffff18;color:#fff}
+#map140{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:10002;width:min(82vw,360px);height:min(70vw,300px);background:rgba(5,12,18,.96);border:1px solid #ffffff30;border-radius:14px;display:none;padding:10px;color:#fff;font:11px Arial}
+#map140 canvas{width:100%;height:220px;background:#101a20;border-radius:10px}
+</style>
+<div id="all140">
+<b>أنظمة العالم الكاملة</b><br>
+<button id="inv140">الحقيبة</button><button id="map140b">الخريطة</button><button id="shop140">متجر</button>
+<button id="dialog140">حوار</button><button id="audio140">صوت</button><br>
+<span id="all140msg">كل الأنظمة أوفلاين</span>
+</div>
+<div id="map140"><b>خريطة العالم</b><canvas id="mapCanvas140" width="520" height="300"></canvas><button id="closeMap140">إغلاق</button></div>
+<script id="MILESTONE140_ALL_SYSTEMS">
+(()=>{
+if(window.__all140)return;window.__all140=true;
+const key='allSystems140';
+const S=Object.assign({
+ inv:{wood:0,ore:0,herb:0,fish:0,crystal:0,eggs:0,coins:999999,gems:999999},
+ equip:{weapon:'سيف',armor:'درع',weaponLevel:1,armorLevel:1},
+ dialog:0,shop:0,loot:0,craft:0,steps:0,audio:true,weather:0
+},JSON.parse(localStorage.getItem(key)||'{}'));
+const msg=document.getElementById('all140msg');
+const save=()=>{try{localStorage.setItem(key,JSON.stringify(S))}catch(e){}};
+const say=x=>{msg.textContent=x;save()};
+function refreshInventory(){
+ const old=document.getElementById('inventoryPanel');
+ if(old){old.hidden=false;old.innerHTML='<b>حقيبة اللاعب</b><br>خشب '+S.inv.wood+' • خام '+S.inv.ore+' • أعشاب '+S.inv.herb+' • سمك '+S.inv.fish+'<br>بلورات '+S.inv.crystal+' • بيض '+S.inv.eggs+' • عملات '+S.inv.coins+' • جواهر '+S.inv.gems+'<br>سلاح: '+S.equip.weapon+' Lv.'+S.equip.weaponLevel+' • درع Lv.'+S.equip.armorLevel;return;}
+ const p=document.createElement('div');p.id='inventoryPanel';p.style='position:fixed;right:10px;bottom:90px;z-index:10000;background:#07101aeF;color:white;padding:12px;border-radius:12px;font:12px Arial;max-width:260px';p.innerHTML='<b>حقيبة اللاعب</b>';document.body.appendChild(p);refreshInventory();
+}
+document.getElementById('inv140').onclick=refreshInventory;
+document.getElementById('shop140').onclick=()=>{S.shop++;S.inv.coins+=100;S.inv.gems+=10;say('متجر أوفلاين: تم استلام موارد مجانية');};
+document.getElementById('dialog140').onclick=()=>{S.dialog++;const lines=['أهلًا بك في المدينة.','الطريق شمالًا يقود إلى الغابة.','الوحوش تظهر أكثر ليلًا.','هناك بوابة سرية قرب الجبال.'];say('NPC: '+lines[S.dialog%lines.length]);};
+document.getElementById('audio140').onclick=()=>{
+S.audio=!S.audio;
+if(S.audio){try{const C=window.AudioContext||window.webkitAudioContext;if(C){const c=new C(),o=c.createOscillator(),g=c.createGain();o.frequency.value=220;g.gain.value=.035;o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+.18)}}catch(e){}say('الصوت مفعّل');}else say('الصوت متوقف');
+};
+const map=document.getElementById('map140'),mc=document.getElementById('mapCanvas140'),ctx=mc.getContext('2d');
+document.getElementById('map140b').onclick=()=>{map.style.display='block';drawMap()};
+document.getElementById('closeMap140').onclick=()=>map.style.display='none';
+function drawMap(){
+ ctx.clearRect(0,0,mc.width,mc.height);
+ ctx.fillStyle='#173b31';ctx.fillRect(0,0,mc.width,mc.height);
+ for(let i=0;i<34;i++){const x=(i*83)%mc.width,y=(i*137)%mc.height;ctx.fillStyle=i%3?'#244f3a':'#6b5b35';ctx.beginPath();ctx.arc(x,y,18+(i%5)*4,0,Math.PI*2);ctx.fill();}
+ ctx.fillStyle='#5c7890';ctx.fillRect(40,125,440,25);
+ ctx.fillStyle='#d8c37a';ctx.fillRect(240,80,42,150);
+ ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(mc.width/2,mc.height/2,7,0,Math.PI*2);ctx.fill();
+}
+function nearestNPC(){
+ if(!window.p)return null;
+ const a=Math.floor(p.x/CH),b=Math.floor(p.z/CH),q=makeChunk(a,b);
+ return q&&q.npcs&&q.npcs[0]?q.npcs[0]:null;
+}
+window.npcInteract140=()=>{
+ const n=nearestNPC();S.dialog++;say(n?'حوار مع '+(n.name||'شخص من المدينة'):'لا يوجد NPC قريب');
+};
+window.pathfind140=(ax,az,bx,bz)=>{
+ const dx=bx-ax,dz=bz-az,l=Math.hypot(dx,dz)||1;return {x:dx/l,z:dz/l,distance:l};
+};
+window.combatHitbox140=(target,damage)=>{
+ if(!target)return false;
+ target.hp=Math.max(0,(target.hp||100)-damage);
+ S.loot+=target.hp===0?1:0;save();return target.hp===0;
+};
+window.craft140=(kind)=>{
+ const cost=2+(S.craft%5);
+ if(S.inv.ore>=cost){S.inv.ore-=cost;S.craft++;S.equip.weaponLevel++;say('تم تصنيع وتطوير '+kind+' • المستوى '+S.equip.weaponLevel);}
+ else say('تحتاج '+cost+' خام للتصنيع');
+};
+setInterval(()=>{
+ S.steps++;S.inv.wood++;S.inv.herb++;
+ if(S.steps%20===0){S.inv.ore++;S.inv.fish++;S.inv.crystal++}
+ save();
+},5000);
+window.addEventListener('beforeunload',save);
+})();
 </script></body>
 </html
 <script id="MILESTONE110_VISUAL_POLISH">
