@@ -1,16 +1,91 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>العالم السحري</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#05070b;color:#fff;font-family:Arial,sans-serif;touch-action:none}canvas{width:100%;height:100%;display:block}.hud{position:fixed;inset:0;pointer-events:none}.top{position:absolute;top:10px;right:10px;display:flex;gap:8px;align-items:center}.pill{background:#101824cc;border:1px solid #ffffff30;border-radius:14px;padding:7px 10px;font-size:12px}.btn{pointer-events:auto;user-select:none;display:flex;align-items:center;justify-content:center;background:#172231dd;border:1px solid #ffffff40;border-radius:50%;width:58px;height:58px;font-weight:bold}.right{position:absolute;right:18px;bottom:18px;display:grid;grid-template-columns:repeat(2,62px);gap:10px}.left{position:absolute;left:18px;bottom:18px;width:150px;height:150px;pointer-events:auto}.joy{position:absolute;width:92px;height:92px;left:29px;top:29px;border-radius:50%;background:#ffffff18;border:1px solid #ffffff40}.knob{position:absolute;width:48px;height:48px;left:51px;top:51px;margin:-24px;border-radius:50%;background:#ffffff35;border:1px solid #ffffff70}.help{position:absolute;left:10px;top:10px;background:#101824bb;border:1px solid #ffffff25;border-radius:12px;padding:8px;font-size:11px;line-height:1.5}.cross{position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px;border:1px solid #ffffff60;border-radius:50%}</style></head><body><canvas id="c"></canvas><div class="hud"><div class="help">عالم مفتوح • حر بلا مهمات إجبارية<br>اسحب الشاشة لتدوير الكاميرا • العصا للحركة</div><div class="top"><div class="pill" id="stats">المستوى 1 • 100%</div><div class="pill">المال ∞ • الجواهر ∞</div></div><div class="cross"></div><div class="left"><div class="joy"></div><div class="knob" id="knob"></div></div><div class="right"><div class="btn" id="sword">سيف</div><div class="btn" id="atk">هجوم</div><div class="btn" id="magic">سحر</div><div class="btn" id="jump">قفز</div></div></div><script>
-const C=document.getElementById('c'),gl=C.getContext('webgl',{antialias:true});let W,H,dpr;function resize(){dpr=Math.min(devicePixelRatio||1,2);W=C.clientWidth;H=C.clientHeight;C.width=W*dpr;C.height=H*dpr;gl.viewport(0,0,C.width,C.height)}addEventListener('resize',resize);resize();
-const vs=`attribute vec3 p;uniform mat4 mvp;uniform vec4 col;varying vec4 v;void main(){gl_Position=mvp*vec4(p,1.);v=col;}`;const fs=`precision mediump float;varying vec4 v;void main(){gl_FragColor=v;}`;function sh(t,s){let x=gl.createShader(t);gl.shaderSource(x,s);gl.compileShader(x);return x}let pr=gl.createProgram();gl.attachShader(pr,sh(gl.VERTEX_SHADER,vs));gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,fs));gl.linkProgram(pr);gl.useProgram(pr);let locP=gl.getAttribLocation(pr,'p'),locM=gl.getUniformLocation(pr,'mvp'),locC=gl.getUniformLocation(pr,'col');
-const cube=new Float32Array([-1,-1,-1,1,-1,-1,1,1,-1,-1,1,-1,-1,-1,1,1,-1,1,1,1,1,-1,1,1]);const inds=new Uint16Array([0,1,2,0,2,3,4,6,5,4,7,6,0,4,5,0,5,1,3,2,6,3,6,7,1,5,6,1,6,2,0,3,7,0,7,4]);let vb=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,vb);gl.bufferData(gl.ARRAY_BUFFER,cube,gl.STATIC_DRAW);let ib=gl.createBuffer();gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ib);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,inds,gl.STATIC_DRAW);gl.enableVertexAttribArray(locP);gl.vertexAttribPointer(locP,3,gl.FLOAT,false,0,0);gl.enable(gl.DEPTH_TEST);
-function mm(){return new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1])}function mul(a,b){let o=new Float32Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3];return o}function tr(x,y,z){let o=mm();o[12]=x;o[13]=y;o[14]=z;return o}function sc(x,y,z){let o=mm();o[0]=x;o[5]=y;o[10]=z;return o}function ry(a){let c=Math.cos(a),s=Math.sin(a),o=mm();o[0]=c;o[2]=-s;o[8]=s;o[10]=c;return o}function persp(f,a,n,fa){let t=1/Math.tan(f/2),o=new Float32Array(16);o[0]=t/a;o[5]=t;o[10]=(fa+n)/(n-fa);o[11]=-1;o[14]=2*fa*n/(n-fa);return o}function look(ex,ey,ez,cx,cy,cz){let z=[ex-cx,ey-cy,ez-cz],zl=Math.hypot(...z);z=z.map(v=>v/zl);let x=[z[2],0,-z[0]],xl=Math.hypot(...x);x=x.map(v=>v/xl);let y=[z[1]*x[2]-z[2]*x[1],z[2]*x[0]-z[0]*x[2],z[0]*x[1]-z[1]*x[0]],o=new Float32Array(16);o[0]=x[0];o[1]=y[0];o[2]=z[0];o[4]=x[1];o[5]=y[1];o[6]=z[1];o[8]=x[2];o[9]=y[2];o[10]=z[2];o[12]=-(x[0]*ex+x[1]*ey+x[2]*ez);o[13]=-(y[0]*ex+y[1]*ey+y[2]*ez);o[14]=-(z[0]*ex+z[1]*ey+z[2]*ez);o[15]=1;return o}
-function draw(x,y,z,sx,sy,sz,col,rot=0){let m=mul(tr(x,y,z),mul(ry(rot),sc(sx,sy,sz)));gl.uniformMatrix4fv(locM,false,mul(VP,m));gl.uniform4fv(locC,col);gl.drawElements(gl.TRIANGLES,36,gl.UNSIGNED_SHORT,0)}
-let p={x:0,y:1.1,z:8,vy:0,ang:0,sword:false,attack:0,magic:0,jump:0};let camA=0,camD=8;let keys={};addEventListener('keydown',e=>keys[e.key.toLowerCase()]=1);addEventListener('keyup',e=>keys[e.key.toLowerCase()]=0);
-let joyX=0,joyY=0,drag=false,lastX=0,lastY=0;function joy(e){let r=document.querySelector('.left').getBoundingClientRect(),cx=r.left+75,cy=r.top+75;let x=e.clientX-cx,y=e.clientY-cy,l=Math.min(55,Math.hypot(x,y));if(l){x=x/l;y=y/l}joyX=x;joyY=y;document.getElementById('knob').style.transform=`translate(${x*l}px,${y*l}px)`}document.querySelector('.left').addEventListener('pointerdown',e=>{e.preventDefault();joy(e)});document.querySelector('.left').addEventListener('pointermove',e=>{if(e.buttons)joy(e)});addEventListener('pointerup',()=>{joyX=joyY=0;document.getElementById('knob').style.transform=''});C.addEventListener('pointerdown',e=>{drag=true;lastX=e.clientX;lastY=e.clientY});C.addEventListener('pointermove',e=>{if(drag){camA+=(e.clientX-lastX)*.008;lastX=e.clientX;lastY=e.clientY}});addEventListener('pointerup',()=>drag=false);
-document.getElementById('sword').onclick=()=>{p.sword=!p.sword};document.getElementById('atk').onclick=()=>{p.attack=.45;p.sword=true};document.getElementById('magic').onclick=()=>{p.magic=.55};document.getElementById('jump').onclick=()=>{if(p.y<=1.11){p.vy=5;p.jump=1}};
-let seed=42;function rnd(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}let buildings=[],trees=[],npcs=[];for(let i=0;i<90;i++){let x=(rnd()-.5)*120,z=(rnd()-.5)*120;if(Math.hypot(x,z)<12)continue;let w=2+rnd()*4,d=2+rnd()*4,h=2+rnd()*7;buildings.push({x,z,w,d,h,c:[.22+.2*rnd(),.25+.2*rnd(),.32+.2*rnd(),1]})}for(let i=0;i<180;i++){let x=(rnd()-.5)*150,z=(rnd()-.5)*150;if(Math.hypot(x,z)<9)continue;trees.push({x,z,h:1.5+rnd()*2})}for(let i=0;i<28;i++)npcs.push({x:(rnd()-.5)*90,z:(rnd()-.5)*90,a:rnd()*6.28,t:rnd()*8});
-let VP;function render(t){let dt=Math.min(.033,(t-(render.lt||t))/1000);render.lt=t;let fx=Math.sin(camA),fz=Math.cos(camA),rxv=Math.cos(camA),rzv=-Math.sin(camA);let ix=joyX+(keys.a?-1:0)+(keys.d?1:0),iz=joyY+(keys.w?-1:0)+(keys.s?1:0);let sp=8;if(Math.hypot(ix,iz)>1){let l=Math.hypot(ix,iz);ix/=l;iz/=l;p.x+=(rxv*ix+fx*iz)*sp*dt;p.z+=(rzv*ix+fz*iz)*sp*dt;p.ang=Math.atan2(rxv*ix+fx*iz,rzv*ix+fz*iz)}if(p.jump){p.vy-=12*dt;p.y+=p.vy*dt;if(p.y<=1.1){p.y=1.1;p.jump=0;p.vy=0}}if(p.attack>0)p.attack-=dt;if(p.magic>0)p.magic-=dt;
-let ex=p.x-fx*camD,ez=p.z-fz*camD,ey=p.y+5.2;VP=mul(persp(1.0,W/H,.1,300),look(ex,ey,ez,p.x,p.y+1.4,p.z));gl.clearColor(.045,.07,.1,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);draw(0,-.25,0,80,.25,80,[.08,.18,.1,1]);for(let i=-8;i<=8;i++)draw(i*10,.02,0,.45,.03,80,[.08,.08,.09,1]);for(let i=-8;i<=8;i++)draw(0,.025,i*10,80,.03,.45,[.08,.08,.09,1]);
-for(let b of buildings){draw(b.x,b.h/2,b.z,b.w,b.h/2,b.d,b.c);draw(b.x,b.h+.15,b.z,b.w*1.05,.15,b.d*1.05,[.12,.08,.07,1])}for(let q of trees){draw(q.x,q.h*.55,q.z,.25,q.h*.55,.25,[.25,.12,.06,1]);draw(q.x,q.h*1.35,q.z,1.1,1.2,1.1,[.05,.3,.1,1])}for(let n of npcs){n.t+=dt;let xx=n.x+Math.cos(n.t+n.a)*1.5,zz=n.z+Math.sin(n.t+n.a)*1.5;draw(xx,1,zz,.35,1,.3,[.25,.35,.75,1],n.t+n.a);draw(xx,2.2,zz,.28,.28,.28,[.75,.55,.4,1])}
-let bodyRot=p.ang;draw(p.x,p.y+1,p.z,.45,1,.3,[.18,.38,.85,1],bodyRot);draw(p.x,p.y+2.2,p.z,.32,.32,.32,[.8,.6,.45,1]);let swing=p.attack>0?Math.sin((.45-p.attack)*18)*1.5:0;draw(p.x+Math.sin(bodyRot)*.55,p.y+1.15,p.z+Math.cos(bodyRot)*.55,.12,.55,.12,[.8,.65,.45,1],bodyRot+swing);draw(p.x-Math.sin(bodyRot)*.55,p.y+1.15,p.z-Math.cos(bodyRot)*.55,.12,.55,.12,[.8,.65,.45,1],bodyRot-swing);if(p.sword){let sy=p.attack>0?bodyRot+1.1:bodyRot;draw(p.x+Math.sin(sy)*.75,p.y+1.35,p.z+Math.cos(sy)*.75,.08,.8,.08,[.75,.78,.86,1],sy)}else draw(p.x-Math.sin(bodyRot)*.38,p.y+1.35,p.z-Math.cos(bodyRot)*.38,.07,.65,.07,[.75,.78,.86,1],bodyRot+.45);if(p.magic>0)for(let k=0;k<8;k++){let a=t*.006+k*.785;draw(p.x+Math.cos(a)*1.4,p.y+1.2+Math.sin(a)*.5,p.z+Math.sin(a)*1.4,.12,.12,.12,[.3,.7,1,1])}
-document.getElementById('stats').textContent=`المستوى 1 • HP 100% • ${p.sword?'السيف مسحوب':'السيف على الظهر'}`;requestAnimationFrame(render)}requestAnimationFrame(render);
-</script></body></html>
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>العالم السحري — عالم مولّد بلا حدود</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#071018;color:#fff;font-family:Arial,sans-serif;touch-action:none}
+canvas{width:100%;height:100%;display:block}.hud{position:fixed;inset:0;pointer-events:none}
+.top{position:absolute;top:9px;right:9px;display:flex;gap:6px;flex-wrap:wrap;max-width:75%}
+.pill{background:#101a27dd;border:1px solid #ffffff30;border-radius:13px;padding:6px 9px;font-size:11px}
+.help{position:absolute;top:9px;left:9px;background:#101a27cc;border:1px solid #ffffff25;border-radius:11px;padding:7px;font-size:10px;line-height:1.5}
+.left{position:absolute;left:12px;bottom:12px;width:154px;height:154px;pointer-events:auto}
+.joy{position:absolute;width:100px;height:100px;left:27px;top:27px;border-radius:50%;background:#ffffff13;border:1px solid #ffffff35}
+.knob{position:absolute;width:48px;height:48px;left:77px;top:77px;margin:-24px;border-radius:50%;background:#ffffff38;border:1px solid #ffffff70}
+.right{position:absolute;right:12px;bottom:12px;display:grid;grid-template-columns:repeat(2,58px);gap:8px}
+.btn{pointer-events:auto;user-select:none;display:flex;align-items:center;justify-content:center;background:#142235e8;border:1px solid #ffffff42;border-radius:50%;width:58px;height:58px;font-weight:bold;font-size:11px}
+.cross{position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-5px;border:1px solid #ffffff65;border-radius:50%}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hud">
+<div class="help">عالم مولّد إجرائيًا بلا نهاية<br>لا مهمات إجبارية • العب واستكشف بحرية</div>
+<div class="top"><div class="pill" id="zone">المنطقة: السهول</div><div class="pill" id="stats">المستوى 1 • HP 100</div><div class="pill">مال ∞ • جواهر ∞</div></div>
+<div class="cross"></div>
+<div class="left"><div class="joy"></div><div class="knob" id="knob"></div></div>
+<div class="right"><div class="btn" id="sword">سيف</div><div class="btn" id="atk">هجوم</div><div class="btn" id="magic">سحر</div><div class="btn" id="jump">قفز</div><div class="btn" id="mount">ركوب</div><div class="btn" id="save">حفظ</div></div>
+</div>
+<script>
+const C=document.getElementById('c'),gl=C.getContext('webgl',{antialias:true});
+let W,H;function resize(){W=C.clientWidth;H=C.clientHeight;C.width=W*Math.min(devicePixelRatio||1,2);C.height=H*Math.min(devicePixelRatio||1,2);gl.viewport(0,0,C.width,C.height)}addEventListener('resize',resize);resize();
+const vs='attribute vec3 p;uniform mat4 mvp;uniform vec4 col;varying vec4 v;void main(){gl_Position=mvp*vec4(p,1.0);v=col;}';
+const fs='precision mediump float;varying vec4 v;void main(){gl_FragColor=v;}';
+function shader(t,s){let q=gl.createShader(t);gl.shaderSource(q,s);gl.compileShader(q);return q}
+let pr=gl.createProgram();gl.attachShader(pr,shader(gl.VERTEX_SHADER,vs));gl.attachShader(pr,shader(gl.FRAGMENT_SHADER,fs));gl.linkProgram(pr);gl.useProgram(pr);
+let lp=gl.getAttribLocation(pr,'p'),lm=gl.getUniformLocation(pr,'mvp'),lc=gl.getUniformLocation(pr,'col');
+const cube=new Float32Array([-1,-1,-1,1,-1,-1,1,1,-1,-1,1,-1,-1,-1,1,1,-1,1,1,1,1,-1,1,1]);
+const ind=new Uint16Array([0,1,2,0,2,3,4,6,5,4,7,6,0,4,5,0,5,1,3,2,6,3,6,7,1,5,6,1,6,2,0,3,7,0,7,4]);
+let vb=gl.createBuffer(),ib=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,vb);gl.bufferData(gl.ARRAY_BUFFER,cube,gl.STATIC_DRAW);gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ib);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,ind,gl.STATIC_DRAW);gl.enableVertexAttribArray(lp);gl.vertexAttribPointer(lp,3,gl.FLOAT,false,0,0);gl.enable(gl.DEPTH_TEST);
+function I(){return new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1])}
+function mul(a,b){let o=new Float32Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3];return o}
+function tr(x,y,z){let o=I();o[12]=x;o[13]=y;o[14]=z;return o}
+function sc(x,y,z){let o=I();o[0]=x;o[5]=y;o[10]=z;return o}
+function ry(a){let c=Math.cos(a),s=Math.sin(a),o=I();o[0]=c;o[2]=-s;o[8]=s;o[10]=c;return o}
+function persp(f,a,n,fa){let t=1/Math.tan(f/2),o=new Float32Array(16);o[0]=t/a;o[5]=t;o[10]=(fa+n)/(n-fa);o[11]=-1;o[14]=2*fa*n/(n-fa);return o}
+function look(ex,ey,ez,cx,cy,cz){let z=[ex-cx,ey-cy,ez-cz],l=Math.hypot(...z);z=z.map(v=>v/l);let x=[z[2],0,-z[0]],xl=Math.hypot(...x);x=x.map(v=>v/xl);let y=[z[1]*x[2]-z[2]*x[1],z[2]*x[0]-z[0]*x[2],z[0]*x[1]-z[1]*x[0]],o=I();o[0]=x[0];o[1]=y[0];o[2]=z[0];o[4]=x[1];o[5]=y[1];o[6]=z[1];o[8]=x[2];o[9]=y[2];o[10]=z[2];o[12]=-(x[0]*ex+x[1]*ey+x[2]*ez);o[13]=-(y[0]*ex+y[1]*ey+y[2]*ez);o[14]=-(z[0]*ex+z[1]*ey+z[2]*ez);o[15]=1;return o}
+let VP;
+function draw(x,y,z,sx,sy,sz,col,rot=0){let m=mul(tr(x,y,z),mul(ry(rot),sc(sx,sy,sz)));gl.uniformMatrix4fv(lm,false,mul(VP,m));gl.uniform4fv(lc,col);gl.drawElements(gl.TRIANGLES,36,gl.UNSIGNED_SHORT,0)}
+function hash(x,z){let n=Math.sin(x*127.1+z*311.7)*43758.5453;return n-Math.floor(n)}
+function noise(x,z){let ix=Math.floor(x),iz=Math.floor(z),fx=x-ix,fz=z-iz;let a=hash(ix,iz),b=hash(ix+1,iz),c=hash(ix,iz+1),d=hash(ix+1,iz+1);fx=fx*fx*(3-2*fx);fz=fz*fz*(3-2*fz);return a+(b-a)*fx+((c+(d-c)*fx)-(a+(b-a)*fx))*fz}
+function terrain(x,z){return (noise(x*.035,z*.035)-.5)*3+(noise(x*.09,z*.09)-.5)*1.1}
+function biome(x,z){let n=noise(x*.008+70,z*.008-30);if(n<.18)return ['ثلوج',[.72,.82,.9,1]];if(n<.35)return ['صحراء',[.62,.48,.27,1]];if(n>.84)return ['غابة',[.06,.27,.09,1]];if(Math.abs(x%90)<5||Math.abs(z%90)<5)return ['نهر',[.08,.32,.5,1]];return ['سهول',[.16,.36,.12,1]]}
+const p={x:0,y:1.2,z:10,vy:0,ang:0,sword:false,attack:0,magic:0,mounted:false,hp:100,level:1};
+let camA=0,camD=8,keys={},joyX=0,joyY=0,drag=false,lastX=0,lastY=0;
+addEventListener('keydown',e=>keys[e.key.toLowerCase()]=1);addEventListener('keyup',e=>keys[e.key.toLowerCase()]=0);
+function setJoy(e){let r=document.querySelector('.left').getBoundingClientRect(),x=e.clientX-(r.left+77),y=e.clientY-(r.top+77),l=Math.hypot(x,y);if(l>55){x=x/l*55;y=y/l*55}joyX=x/55;joyY=y/55;document.getElementById('knob').style.transform='translate('+x+'px,'+y+'px)'}
+document.querySelector('.left').addEventListener('pointerdown',e=>{e.preventDefault();setJoy(e)});document.querySelector('.left').addEventListener('pointermove',e=>{if(e.buttons)setJoy(e)});addEventListener('pointerup',()=>{joyX=joyY=0;document.getElementById('knob').style.transform=''});
+C.addEventListener('pointerdown',e=>{drag=true;lastX=e.clientX});C.addEventListener('pointermove',e=>{if(drag){camA+=(e.clientX-lastX)*.008;lastX=e.clientX}});addEventListener('pointerup',()=>drag=false);
+document.getElementById('sword').onclick=()=>p.sword=!p.sword;
+document.getElementById('atk').onclick=()=>{p.attack=.5;p.sword=true};
+document.getElementById('magic').onclick=()=>p.magic=.8;
+document.getElementById('jump').onclick=()=>{if(p.y<=terrain(p.x,p.z)+1.25){p.vy=6}};
+document.getElementById('mount').onclick=()=>p.mounted=!p.mounted;
+document.getElementById('save').onclick=()=>localStorage.setItem('magic_world_save',JSON.stringify({x:p.x,y:p.y,z:p.z,level:p.level}));
+try{let s=JSON.parse(localStorage.getItem('magic_world_save'));if(s){p.x=s.x;p.y=s.y;p.z=s.z;p.level=s.level}}catch(e){}
+let chunks=new Map(),CH=32,R=3;
+function makeChunk(cx,cz){let key=cx+','+cz;if(chunks.has(key))return chunks.get(key);let o={trees:[],buildings:[],npcs:[],creatures:[]};let b=biome(cx*CH,cz*CH);let r=()=>hash(cx*1000+o.trees.length,cz*1000+o.trees.length+9);
+for(let i=0;i<14;i++){let x=cx*CH+(hash(cx*17+i,cz*23)-.5)*CH,z=cz*CH+(hash(cx*31+i,cz*11)-.5)*CH;if(Math.hypot(x-p.x,z-p.z)<3)continue;o.trees.push({x,z,h:1.5+r()*2})}
+for(let i=0;i<3;i++){let x=cx*CH+(hash(cx*7+i,cz*13)-.5)*CH,z=cz*CH+(hash(cx*19+i,cz*5)-.5)*CH;o.buildings.push({x,z,w:2+r()*3,d:2+r()*3,h:2+r()*5})}
+for(let i=0;i<3;i++){let x=cx*CH+(hash(cx*43+i,cz*7)-.5)*CH,z=cz*CH+(hash(cx*5+i,cz*37)-.5)*CH;o.npcs.push({x,z,a:hash(i+cx,cz+i)*6.28,t:0,role:['تاجر','محارب','ساحر'][i]})}
+if(r()>.35){let x=cx*CH+(r()-.5)*CH,z=cz*CH+(r()-.5)*CH;o.creatures.push({x,z,a:r()*6.28,t:0,type:r()>.5?'ذئب':'غزال'})}
+chunks.set(key,o);return o}
+function visible(){let pcx=Math.floor(p.x/CH),pcz=Math.floor(p.z/CH);for(let x=pcx-R;x<=pcx+R;x++)for(let z=pcz-R;z<=pcz+R;z++)makeChunk(x,z);for(let k of chunks.keys()){let a=k.split(',').map(Number);if(Math.abs(a[0]-pcx)>R+1||Math.abs(a[1]-pcz)>R+1)chunks.delete(k)}}
+function worldDraw(){visible();let pcx=Math.floor(p.x/CH),pcz=Math.floor(p.z/CH);
+for(let cx=pcx-R;cx<=pcx+R;cx++)for(let cz=pcz-R;cz<=pcz+R;cz++){let q=makeChunk(cx,cz),bb=biome(cx*CH,cz*CH)[1];
+for(let gx=0;gx<4;gx++)for(let gz=0;gz<4;gz++){let x=cx*CH+(gx-.5)*8,z=cz*CH+(gz-.5)*8,y=terrain(x,z);draw(x,y-.35,z,4,.35,4,bb)}
+for(let b of q.buildings){let y=terrain(b.x,b.z);draw(b.x,y+b.h/2,b.z,b.w,b.h/2,b.d,[.3,.24,.18,1]);draw(b.x,y+b.h+.1,b.z,b.w*1.05,.12,b.d*1.05,[.12,.07,.05,1])}
+for(let t of q.trees){let y=terrain(t.x,t.z);draw(t.x,y+t.h*.45,t.z,.22,t.h*.45,.22,[.3,.16,.06,1]);draw(t.x,y+t.h*1.15,t.z,1,1.1,1,[.05,.28,.08,1])}
+for(let n of q.npcs){n.t+=.008;let x=n.x+Math.cos(n.t+n.a)*1.8,z=n.z+Math.sin(n.t+n.a)*1.8,y=terrain(x,z);draw(x,y+1,z,.32,1,.28,[.25,.4,.8,1],n.t+n.a);draw(x,y+2.1,z,.27,.27,.27,[.75,.55,.4,1])}
+for(let a of q.creatures){a.t+=.012;let x=a.x+Math.cos(a.t+a.a)*2,z=a.z+Math.sin(a.t+a.a)*2,y=terrain(x,z);draw(x,y+.55,z,.65,.55,.9,a.type==='ذئب'?[.22,.22,.25,1]:[.55,.45,.3,1],a.t+a.a);draw(x,y+1.1,z,.38,.38,.38,[.4,.3,.25,1])}}}
+function render(t){let dt=Math.min(.033,(t-(render.lt||t))/1000);render.lt=t;let fx=Math.sin(camA),fz=Math.cos(camA),rx=Math.cos(camA),rz=-Math.sin(camA);let ix=joyX+(keys.a?-1:0)+(keys.d?1:0),iz=joyY+(keys.w?-1:0)+(keys.s?1:0),l=Math.hypot(ix,iz);if(l>1){ix/=l;iz/=l}let sp=p.mounted?12:7;if(l>.05){p.x+=(rx*ix+fx*iz)*sp*dt;p.z+=(rz*ix+fz*iz)*sp*dt;p.ang=Math.atan2(rx*ix+fx*iz,rz*ix+fz*iz)}let gy=terrain(p.x,p.z)+1.1;if(p.y>gy||p.vy>0){p.vy-=14*dt;p.y+=p.vy*dt;if(p.y<gy){p.y=gy;p.vy=0}}if(p.attack>0)p.attack-=dt;if(p.magic>0)p.magic-=dt;
+let ex=p.x-fx*camD,ez=p.z-fz*camD,ey=p.y+4.8;VP=mul(persp(1,W/H,.1,420),look(ex,ey,ez,p.x,p.y+1.3,p.z));gl.clearColor(.03,.06,.1,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);worldDraw();
+let br=p.ang;draw(p.x,p.y+1,p.z,.45,1,.3,[.18,.38,.85,1],br);draw(p.x,p.y+2.15,p.z,.31,.31,.31,[.8,.6,.45,1]);let sw=p.attack>0?Math.sin((.5-p.attack)*18)*1.5:0;draw(p.x+Math.sin(br)*.52,p.y+1.1,p.z+Math.cos(br)*.52,.12,.55,.12,[.8,.65,.45,1],br+sw);draw(p.x-Math.sin(br)*.52,p.y+1.1,p.z-Math.cos(br)*.52,.12,.55,.12,[.8,.65,.45,1],br-sw);
+if(p.sword){let sa=p.attack>0?br+1.2:br;draw(p.x+Math.sin(sa)*.72,p.y+1.35,p.z+Math.cos(sa)*.72,.08,.82,.08,[.75,.8,.9,1],sa)}else draw(p.x-Math.sin(br)*.38,p.y+1.35,p.z-Math.cos(br)*.38,.07,.65,.07,[.75,.8,.9,1],br+.4);
+if(p.magic>0)for(let k=0;k<10;k++){let a=t*.004+k*.628;draw(p.x+Math.cos(a)*1.4,p.y+1.2+Math.sin(a)*.5,p.z+Math.sin(a)*1.4,.13,.13,.13,[.3,.7,1,1])}
+let b=biome(p.x,p.z);document.getElementById('zone').textContent='المنطقة: '+b[0]+' • العالم: '+Math.floor(p.x)+' / '+Math.floor(p.z);document.getElementById('stats').textContent='المستوى '+p.level+' • HP '+p.hp+' • '+(p.mounted?'راكب':'حر')+' • '+(p.sword?'السيف مسحوب':'السيف على الظهر');requestAnimationFrame(render)}
+requestAnimationFrame(render);
+</script>
+</body>
+</html>
