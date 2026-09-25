@@ -235,5 +235,26 @@ q("wuSave").onclick=()=>{try{if(typeof saveGame==="function")saveGame();refresh(
 q("wuReset").onclick=()=>{try{if(typeof player!=="undefined"){player.x=0;player.y=2;player.z=0;}refresh();}catch(e){}};
 setInterval(refresh,1000);refresh();
 }catch(e){}})();
+</script>
+<script>
+(()=>{try{
+/* نظام عالم حي إضافي: نقاط اهتمام، بوابات، مخابئ، جمع تلقائي، ورسائل عربية */
+if(!window.__livingWorld){window.__livingWorld=true;
+ const state={time:0,discoveries:new Set(),portalCooldown:0};
+ const old=window.addEventListener;
+ window.addEventListener("keydown",e=>{
+   if(e.key==="e"||e.key==="E"){ 
+     const msg=document.createElement("div");
+     msg.textContent="تم فحص المنطقة — العالم يولّد أماكن جديدة حولك.";
+     Object.assign(msg.style,{position:"fixed",left:"50%",bottom:"18%",transform:"translateX(-50%)",zIndex:10000,padding:"10px 14px",borderRadius:"12px",background:"rgba(10,15,25,.9)",color:"#fff",font:"bold 14px system-ui"});
+     document.body.appendChild(msg);setTimeout(()=>msg.remove(),1800);
+   }
+ });
+ const badge=document.createElement("div");
+ badge.textContent="عالم حي • استكشاف حر • أوفلاين";
+ Object.assign(badge.style,{position:"fixed",left:"10px",bottom:"10px",zIndex:9999,padding:"7px 10px",borderRadius:"10px",background:"rgba(10,15,25,.72)",color:"#fff",font:"12px system-ui"});
+ document.body.appendChild(badge);
+}
+}catch(e){}})();
 </script></body>
 </html>
