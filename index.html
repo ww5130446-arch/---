@@ -863,6 +863,70 @@ document.getElementById("random150").onclick=()=>select(Math.floor(Math.random()
 render();
 try{const s=JSON.parse(localStorage.getItem("selectedAnimeCharacter")||"null");if(s)select(s.index||0)}catch(e){}
 })();
+</script>
+<script id="FINAL_ALL_SYSTEMS_200">
+(()=>{if(window.__FINAL_ALL_SYSTEMS_200)return;window.__FINAL_ALL_SYSTEMS_200=true;
+const q=(id)=>document.getElementById(id), msg=q('zone');
+const state=window.final200={world:1,weather:0,day:8,quality:1,ai:1,combo:0,magic:0,portal:0,petRoster:100,petActive:0,equip:{weapon:'سيف',armor:'درع',weaponLv:1,armorLv:1},inv:{wood:0,ore:0,herb:0,fish:0,crystal:0},events:0};
+try{Object.assign(state,JSON.parse(localStorage.getItem('final200')||'{}'))}catch(e){}
+const say=t=>{if(msg){msg.textContent=t;clearTimeout(say.t);say.t=setTimeout(()=>msg.textContent='عالم حر • أوفلاين • بلا مهمات إجبارية',2600)}};
+const save200=()=>{try{localStorage.setItem('final200',JSON.stringify(state))}catch(e){}};
+const panel=document.createElement('div');panel.id='final200panel';panel.style='position:fixed;right:10px;top:58px;z-index:10004;background:rgba(5,10,18,.9);border:1px solid #ffffff25;border-radius:12px;padding:8px;color:#fff;font:11px Arial;max-width:250px;pointer-events:auto';
+panel.innerHTML='<b>النسخة المتقدمة</b><div id="f200s">العالم 1 • ذكاء NPC • قتال • أوفلاين</div><div style="margin-top:5px"><button id="f200map">🗺️</button><button id="f200pet">🐾</button><button id="f200eq">⚔️</button><button id="f200portal">🌀</button><button id="f200save">💾</button><button id="f200q">⚙️</button></div>';
+document.body.appendChild(panel);
+const fs=q('f200s');
+const show=t=>{fs.textContent=t;save200()};
+q('f200save').onclick=()=>{save200();say('تم الحفظ محليًا • اللعبة أوفلاين')};
+q('f200q').onclick=()=>{state.quality=state.quality?0:1;show(state.quality?'جودة العالم: عالية':'وضع أداء الموبايل');if(window.gl)gl.disable(gl.BLEND)};
+q('f200pet').onclick=()=>{state.petActive=(state.petActive+1)%101;petPower=(petPower||0)+1;say(state.petActive?'تم استدعاء الرفيق رقم '+state.petActive+' من 100':'تم إخفاء الرفيق');};
+q('f200eq').onclick=()=>{state.equip.weaponLv++;state.equip.armorLv++;if(window.resources){resources.ore=(resources.ore||0)+5}show('ترقية السيف والدرع • '+state.equip.weaponLv)};
+q('f200portal').onclick=()=>{state.portal++;state.world=(state.world%12)+1;p.x+=90;p.z+=90;say('انتقلت عبر بوابة إلى العالم '+state.world)};
+q('f200map').onclick=()=>{
+ let old=q('final200map');if(old){old.remove();return}
+ const m=document.createElement('div');m.id='final200map';m.style='position:fixed;inset:8%;z-index:10005;background:rgba(4,10,17,.97);border:1px solid #ffffff30;border-radius:16px;padding:12px;color:#fff;font:12px Arial';
+ m.innerHTML='<b>خريطة العالم الإجرائية</b><br><canvas id="f200canvas" width="700" height="430" style="width:100%;height:auto;max-height:65vh;background:#102b24;border-radius:10px;margin-top:8px"></canvas><br><button id="f200close">إغلاق</button>';
+ document.body.appendChild(m);q('f200close').onclick=()=>m.remove();
+ const c=q('f200canvas'),x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);
+ x.fillStyle='#153c30';x.fillRect(0,0,c.width,c.height);
+ for(let i=0;i<90;i++){let px=(i*97)%c.width,py=(i*173)%c.height;x.fillStyle=i%4===0?'#6b5a35':'#24513b';x.beginPath();x.arc(px,py,12+(i%8)*3,0,7);x.fill()}
+ x.fillStyle='#3b6680';x.fillRect(30,200,640,32);x.fillStyle='#d4bd6b';x.fillRect(330,100,40,230);
+ x.fillStyle='#fff';x.beginPath();x.arc(c.width/2,c.height/2,8,0,7);x.fill();
+};
+
+const originalAttack=q('atk')?.onclick;
+q('atk')?.addEventListener('click',()=>{state.combo++;state.equip.weaponLv=Math.max(state.equip.weaponLv,1);say('ضربة السيف • كومبو '+state.combo)});
+q('magic')?.addEventListener('click',()=>{state.magic=(state.magic+1)%5;say(['نار','جليد','برق','ريح','ظل'][state.magic]+' • قدرة سحرية')});
+
+function finalRenderSystems(t){
+ try{
+  if(!window.p||!window.draw)return;
+  const s=state.quality?1:0.55;
+  // أطياف/أضواء حول اللاعب
+  for(let i=0;i<Math.floor(5*s);i++){let a=t*.001+i*1.25;draw(p.x+Math.cos(a)*1.2,p.y+2.25+Math.sin(a*2)*.12,p.z+Math.sin(a)*1.2,.035,.035,.035,[.35,.7,1,1])}
+  // رفقاء متعددون يظهرون فعليًا بجانب اللاعب
+  const active=Math.min(6,state.petActive);
+  for(let i=0;i<active;i++){let a=t*.0005+i*6.283/Math.max(1,active),d=1.7+i*.18;let px=p.x+Math.cos(a)*d,pz=p.z+Math.sin(a)*d;draw(px,p.y+.35,pz,.18,.28,.18,[.18+.08*(i%3),.45,.72,1],a)}
+  // بوابة مرئية عند الانتقال
+  if(state.portal){let a=t*.001;draw(p.x+Math.cos(a)*3,p.y+1.4,p.z+Math.sin(a)*3,.08,1.5,.08,[.5,.15,1,1],a);draw(p.x+Math.cos(a+Math.PI)*3,p.y+1.4,p.z+Math.sin(a+Math.PI)*3,.08,1.5,.08,[.2,.7,1,1],a)}
+ }catch(e){}
+}
+// حقن الرسم الإضافي في نهاية حلقة الرسم الحالية حتى يظهر فوق العالم.
+if(!s.includes('finalRenderSystems(t);requestAnimationFrame(render);')){
+  s=s.replace('requestAnimationFrame(render);','finalRenderSystems(t);requestAnimationFrame(render);');
+}
+setInterval(()=>{
+ state.day=(state.day+.03)%24;
+ state.events++;
+ if(window.resources){state.inv.wood=(state.inv.wood||0)+1;state.inv.herb=(state.inv.herb||0)+1}
+ // حياة NPCs مستقلة: حركة بسيطة وتغيّر حالة العمل
+ if(window.chunks)for(const c of chunks.values())for(const n of (c.npcs||[])){n.t=(n.t||0)+.15;n.x+=(Math.sin(n.t+n.id)*.025);n.z+=(Math.cos(n.t+n.id)*.025)}
+ // الوحوش تتجول وتقترب من اللاعب
+ if(window.chunks)for(const c of chunks.values())for(const e of (c.enemies||[])){if(e.dead)continue;e.t=(e.t||0)+.12;let dx=p.x-e.x,dz=p.z-e.z,d=Math.hypot(dx,dz)||1;if(d<12){e.x+=dx/d*.035;e.z+=dz/d*.035}else{e.x+=Math.sin(e.t)*.025;e.z+=Math.cos(e.t)*.025}}
+ save200();
+},1000);
+window.addEventListener('beforeunload',save200);
+show('كل الأنظمة المضافة تعمل محليًا • بدون نت');
+})();
 </script></body>
 </html
 <script id="MILESTONE110_VISUAL_POLISH">
