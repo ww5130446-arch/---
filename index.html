@@ -636,5 +636,18 @@ add('magic80','✨',()=>{W.magic++;toast('تطوير مدرسة السحر • �
 add('discover80','🗺️',()=>{W.discoveries++;toast('اكتشاف جديد على الخريطة • '+W.discoveries)});
 setInterval(()=>{try{localStorage.setItem('originalWorld80',JSON.stringify(W))}catch(e){}},5000);
 })();
+</script>
+<script id="MILESTONE90_WORLD_POLISH">
+(()=>{const p=document.getElementById('worldSystems70');if(!p)return;
+const W=window.originalWorld90=JSON.parse(localStorage.getItem('originalWorld90')||'{"quests":0,"events":0,"weather":0,"secrets":0,"companions":0,"saveSlots":1}');
+const toast=m=>{p.textContent=m;clearTimeout(p._t);p._t=setTimeout(()=>p.textContent='عالم حي • أحداث • طقس • أسرار • رفقاء',2600)};
+const add=(id,label,fn)=>{if(document.getElementById(id))return;const d=document.createElement('div');d.className='btn';d.id=id;d.textContent=label;const r=document.querySelector('.right');if(r){r.appendChild(d);d.addEventListener('click',fn)}};
+add('event90','⚡',()=>{W.events++;toast('حدث عالمي ديناميكي بدأ • الحدث '+W.events)});
+add('weather90','☁️',()=>{W.weather=(W.weather+1)%4;toast(['طقس صافٍ','مطر','ضباب','عاصفة'][W.weather])});
+add('secret90','🔮',()=>{W.secrets++;toast('مكان سري جديد تم اكتشافه • '+W.secrets)});
+add('ally90','🤝',()=>{W.companions++;toast('رفيق جديد انضم للعالم • العدد '+W.companions)});
+add('save90','💾',()=>{W.saveSlots++;try{localStorage.setItem('originalWorld90',JSON.stringify(W));toast('الحفظ المحلي تم • خانة '+W.saveSlots)}catch(e){toast('الحفظ المحلي غير متاح')}});
+setInterval(()=>{try{localStorage.setItem('originalWorld90',JSON.stringify(W))}catch(e){}},5000);
+})();
 </script></body>
 </html>
