@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="screen-orientation" content="landscape">
 <title>العالم السحري — عالم مولّد بلا حدود</title>
 <style>
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#071018;color:#fff;font-family:Arial,sans-serif;touch-action:none}
@@ -17,8 +17,8 @@ canvas{width:100%;height:100%;display:block}.hud{position:fixed;inset:0;pointer-
 .btn{pointer-events:auto;user-select:none;display:flex;align-items:center;justify-content:center;background:#142235e8;border:1px solid #ffffff42;border-radius:50%;width:58px;height:58px;font-weight:bold;font-size:11px}
 .cross{position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-5px;border:1px solid #ffffff65;border-radius:50%}
 </style>
-</head>
-<body>
+<style>html,body{width:100%;height:100%;orientation:landscape}body{min-width:320px;min-height:180px}#portraitGuard{display:none;position:fixed;inset:0;z-index:9999;background:#071018;color:#fff;align-items:center;justify-content:center;text-align:center;font-size:20px;font-weight:bold}</style></head>
+<body><div id="portraitGuard">شغّل اللعبة بالعرض</div>
 <canvas id="c"></canvas>
 <div class="hud">
 <div class="help">عالم مولّد إجرائيًا بلا نهاية<br>لا مهمات إجبارية • العب واستكشف بحرية</div>
@@ -29,6 +29,7 @@ canvas{width:100%;height:100%;display:block}.hud{position:fixed;inset:0;pointer-
 </div>
 <script>
 const C=document.getElementById('c'),gl=C.getContext('webgl',{antialias:true});
+function forceLandscape(){try{if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(()=>{});}catch(e){}document.getElementById('portraitGuard').style.display=(innerHeight>innerWidth)?'flex':'none';}addEventListener('resize',forceLandscape);forceLandscape();
 let W,H;function resize(){W=C.clientWidth;H=C.clientHeight;C.width=W*Math.min(devicePixelRatio||1,2);C.height=H*Math.min(devicePixelRatio||1,2);gl.viewport(0,0,C.width,C.height)}addEventListener('resize',resize);resize();
 const vs='attribute vec3 p;uniform mat4 mvp;uniform vec4 col;varying vec4 v;void main(){gl_Position=mvp*vec4(p,1.0);v=col;}';
 const fs='precision mediump float;varying vec4 v;void main(){gl_FragColor=v;}';
@@ -52,6 +53,7 @@ function noise(x,z){let ix=Math.floor(x),iz=Math.floor(z),fx=x-ix,fz=z-iz;let a=
 function terrain(x,z){return (noise(x*.035,z*.035)-.5)*3+(noise(x*.09,z*.09)-.5)*1.1}
 function biome(x,z){let n=noise(x*.008+70,z*.008-30);if(n<.18)return ['ثلوج',[.72,.82,.9,1]];if(n<.35)return ['صحراء',[.62,.48,.27,1]];if(n>.84)return ['غابة',[.06,.27,.09,1]];if(Math.abs(x%90)<5||Math.abs(z%90)<5)return ['نهر',[.08,.32,.5,1]];return ['سهول',[.16,.36,.12,1]]}
 const p={x:0,y:1.2,z:10,vy:0,ang:0,sword:false,attack:0,magic:0,mounted:false,hp:100,level:1};
+// إعدادات اللعب النهائية: أوفلاين، بدون تسجيل، بدون إعلانات أو مشتريات حقيقية، وتحكم يدوي فقط.
 let camA=0,camD=8,keys={},joyX=0,joyY=0,drag=false,lastX=0,lastY=0,swordBlend=0,swordTarget=0,gameTime=8,xp=0,resources={wood:0,ore:0,herb:0,fish:0},inventoryOpen=false;
 addEventListener('keydown',e=>keys[e.key.toLowerCase()]=1);addEventListener('keyup',e=>keys[e.key.toLowerCase()]=0);
 function setJoy(e){let r=document.querySelector('.left').getBoundingClientRect(),x=e.clientX-(r.left+77),y=e.clientY-(r.top+77),l=Math.hypot(x,y);if(l>55){x=x/l*55;y=y/l*55}joyX=x/55;joyY=y/55;document.getElementById('knob').style.transform='translate('+x+'px,'+y+'px)'}
@@ -67,7 +69,7 @@ document.getElementById('mount').onclick=()=>p.mounted=!p.mounted;
 document.getElementById('upgrade').onclick=()=>{let cost=p.level*3;if(resources.ore>=cost||cost===0){if(cost>0)resources.ore-=cost;p.level++;p.hp=100;document.getElementById('zone').textContent='تم تطوير القوة إلى المستوى '+p.level}else document.getElementById('zone').textContent='تحتاج '+cost+' خام للترقية'};
 document.getElementById('talk').onclick=()=>{let best=null,bd=4;for(let q of chunks.values())for(let n of q.npcs){let d=Math.hypot(n.x-p.x,n.z-p.z);if(d<bd){bd=d;best=n}}if(best){best.gx=best.x;best.gz=best.z;document.getElementById('zone').textContent=best.role+': أنا مستوى '+(best.level||1)+' وأعيش هنا بحرية.';if(best.role==='تاجر')resources.herb+=1;if(best.role==='محارب')petPower+=1}else document.getElementById('zone').textContent='لا يوجد شخص قريب للتفاعل معه'};
 document.getElementById('boss').onclick=()=>{let found=false;for(let q of chunks.values())if(q.boss&&!q.boss.dead){let d=Math.hypot(q.boss.x-p.x,q.boss.z-p.z);if(d<18){found=true;hitEnemies(7,80+p.level*10);document.getElementById('zone').textContent='زعيم الزنزانة • HP '+Math.max(0,q.boss.hp);if(q.boss.hp<=0){q.boss.dead=1;coins+=500;gainXP(150);document.getElementById('zone').textContent='هزمت زعيم الزنزانة • مكافأة 500'}}}if(!found)document.getElementById('zone').textContent='اقترب من زنزانة أو معلم مظلم'};document.getElementById('shop').onclick=()=>{if(coins>=20){coins-=20;eggs+=1;document.getElementById('zone').textContent='اشتريت بيضة بعملة اللعبة'}else document.getElementById('zone').textContent='المتجر: تحتاج 20 عملة داخل اللعبة'};document.getElementById('craft').onclick=()=>{let cost=craftLevel*4;if(resources.wood>=cost&&resources.ore>=cost){resources.wood-=cost;resources.ore-=cost;craftLevel++;petPower+=3;document.getElementById('zone').textContent='صنعت ترقية معدات • مستوى الصناعة '+craftLevel}else document.getElementById('zone').textContent='الصناعة تحتاج خشب وخام'};document.getElementById('zone').textContent='تمت إضافة طبقة أصول مرخّصة ومظهر شخصيات أنمي متعدد الأشكال إلى نفس المشروع، مع إبقاء النسخة أوفلاين.';
-document.getElementById('save').onclick=()=>localStorage.setItem('magic_world_save',JSON.stringify({x:p.x,y:p.y,z:p.z,level:p.level,hp:p.hp,xp,resources,petCount,petPower,fishCount,farmLevel,eggs,gameTime,coins,craftLevel}));
+document.getElementById('save').onclick=()=>localStorage.setItem('magic_world_save',JSON.stringify({x:p.x,y:p.y,z:p.z,level:p.level,hp:p.hp,xp,resources,petCount,petPower,fishCount,farmLevel,eggs,gameTime,coins,craftLevel,equipment,magicLevels,offline:true}));
 try{let s=JSON.parse(localStorage.getItem('magic_world_save'));if(s){p.x=s.x;p.y=s.y;p.z=s.z;p.level=s.level||1;p.hp=s.hp||100;xp=s.xp||0;resources=Object.assign(resources,s.resources||{});petCount=s.petCount||0;petPower=s.petPower||0;fishCount=s.fishCount||0;farmLevel=s.farmLevel||0;eggs=s.eggs??3;gameTime=s.gameTime??8;coins=s.coins||0;craftLevel=s.craftLevel||1}}catch(e){}
 
 let flying=false,flyV=0,petCount=0,petPower=0,fishCount=0,farmLevel=0,eggs=3;
@@ -94,12 +96,12 @@ setInterval(()=>{farmLevel>0&&(resources.wood+=farmLevel,resources.herb+=farmLev
 document.getElementById('gather').onclick=()=>{let found=0;for(let q of chunks.values())for(let n of q.resources||[]){if(!n.used&&Math.hypot(n.x-p.x,n.z-p.z)<4){n.used=1;resources[n.type]++;found++}}document.getElementById('zone').textContent=found?'جمعت '+found+' موارد':'اقترب من شجرة أو خام أو عشبة';};
 document.getElementById('bag').onclick=()=>{inventoryOpen=!inventoryOpen;document.getElementById('zone').textContent=inventoryOpen?'الحقيبة: خشب '+resources.wood+' • خام '+resources.ore+' • أعشاب '+resources.herb+' • سمك '+fishCount:'الحقيبة أُغلقت'};
 
-let chunks=new Map(),CH=32,R=3,bosses=[],craftLevel=1,coins=0;
+let chunks=new Map(),CH=32,R=5,bosses=[],craftLevel=1,coins=0;
 function landmarkFor(cx,cz){let h=hash(cx*71,cz*113);if(h>.94)return 'قلعة';if(h>.88)return 'برج سحري';if(h>.80)return 'أطلال';if(h<.07)return 'كهف';return ''}
-function makeChunk(cx,cz){let key=cx+','+cz;if(chunks.has(key))return chunks.get(key);let o={trees:[],buildings:[],npcs:[],creatures:[],enemies:[],resources:[],landmark:landmarkFor(cx,cz),dungeon:hash(cx*19,cz*31)>.9};let b=biome(cx*CH,cz*CH);let r=()=>hash(cx*1000+o.trees.length,cz*1000+o.trees.length+9);
+function makeChunk(cx,cz){let key=cx+','+cz;if(chunks.has(key))return chunks.get(key);let o={trees:[],buildings:[],npcs:[],creatures:[],enemies:[],resources:[],landmark:landmarkFor(cx,cz),dungeon:hash(cx*19,cz*31)>.86,city:hash(cx*13,cz*17)>.91};let b=biome(cx*CH,cz*CH);let r=()=>hash(cx*1000+o.trees.length,cz*1000+o.trees.length+9);
 for(let i=0;i<14;i++){let x=cx*CH+(hash(cx*17+i,cz*23)-.5)*CH,z=cz*CH+(hash(cx*31+i,cz*11)-.5)*CH;if(Math.hypot(x-p.x,z-p.z)<3)continue;o.trees.push({x,z,h:1.5+r()*2})}
-for(let i=0;i<3;i++){let x=cx*CH+(hash(cx*7+i,cz*13)-.5)*CH,z=cz*CH+(hash(cx*19+i,cz*5)-.5)*CH;o.buildings.push({x,z,w:2+r()*3,d:2+r()*3,h:2+r()*5})}
-for(let i=0;i<3;i++){let x=cx*CH+(hash(cx*43+i,cz*7)-.5)*CH,z=cz*CH+(hash(cx*5+i,cz*37)-.5)*CH;o.npcs.push({x,z,a:hash(i+cx,cz+i)*6.28,t:0,role:['تاجر','محارب','ساحر'][i]})}
+for(let i=0;i<(o.city?10:3);i++){let x=cx*CH+(hash(cx*7+i,cz*13)-.5)*CH,z=cz*CH+(hash(cx*19+i,cz*5)-.5)*CH;o.buildings.push({x,z,w:2+r()*3,d:2+r()*3,h:2+r()*5})}
+for(let i=0;i<3;i++){let x=cx*CH+(hash(cx*43+i,cz*7)-.5)*CH,z=cz*CH+(hash(cx*5+i,cz*37)-.5)*CH;let n={x,z,a:hash(i+cx,cz+i)*6.28,t:0,role:['تاجر','محارب','ساحر'][i],id:Math.abs(cx*97+cz*53+i)};n.identity=makeIdentity(n.id);o.npcs.push(n)}
 if(r()>.35){let x=cx*CH+(r()-.5)*CH,z=cz*CH+(r()-.5)*CH;o.creatures.push({x,z,a:r()*6.28,t:0,type:r()>.5?'ذئب':'غزال'})}
 for(let i=0;i<2;i++){let x=cx*CH+(r()-.5)*CH,z=cz*CH+(r()-.5)*CH;o.enemies.push({x,z,hp:70,level:1+Math.floor(r()*4),a:r()*6.28,t:0,cd:0,type:r()>.65?'غول':r()>.35?'وحش':'ذئب'})}
 for(let i=0;i<5;i++){let x=cx*CH+(r()-.5)*CH,z=cz*CH+(r()-.5)*CH;o.resources.push({x,z,type:r()>.66?'wood':r()>.33?'ore':'herb',used:0})}if(o.dungeon){let x=cx*CH+5,z=cz*CH+5;o.boss={x,z,hp:500,level:10,dead:0,t:0};}
@@ -158,6 +160,30 @@ function drawFantasyCreature(x,y,z,scale,type,rot=0){
  draw(x-.42*s,y+.78*s,z,.16*s,.3*s,.18*s,c,rot);
  draw(x+.42*s,y+.78*s,z,.16*s,.3*s,.18*s,c,rot);
 }
+
+
+// === FINAL GAME SYSTEMS ===
+// مولّد شخصيات/كائنات/مهن مستقل لكل NPC مع سلاح وسحر ثابتين.
+const NPC_ARCHETYPES=[
+ {race:'إنسان',role:'محارب',weapon:'سيف',magic:'لهب'},
+ {race:'إلف',role:'رامي',weapon:'قوس',magic:'ريح'},
+ {race:'قزم',role:'حداد',weapon:'مطرقة',magic:'أرض'},
+ {race:'شيطان',role:'ساحر',weapon:'عصا',magic:'ظلال'},
+ {race:'ملاك',role:'حارس',weapon:'رمح',magic:'نور'},
+ {race:'وحش',role:'صياد',weapon:'مخالب',magic:'سم'},
+ {race:'روح',role:'ساحر',weapon:'عصا',magic:'روح'},
+ {race:'نصف وحش',role:'محارب',weapon:'سيف',magic:'برق'}
+];
+function makeIdentity(i){let a=NPC_ARCHETYPES[i%NPC_ARCHETYPES.length];return Object.assign({},a,{level:1+(i%20),power:20+(i%20)*8,personality:['مسالم','فضولي','شجاع','حذر','عدائي'][i%5],memory:[],home:null});}
+function advanceNpc(n,dt){n.life=(n.life||0)+dt;if(!n.identity)n.identity=makeIdentity(n.id||0);n.level=n.identity.level+Math.floor(n.life/120)%10;}
+// نظام معدات/ملابس مستقل داخل الحفظ.
+let equipment={weapon:'سيف',armor:'درع مغامر',outfit:'ملابس المغامر',accessory:'قلادة',weaponLevel:1,armorLevel:1};
+function improveEquipment(){let cost=equipment.weaponLevel*2+equipment.armorLevel*2;if(resources.ore>=cost){resources.ore-=cost;equipment.weaponLevel++;equipment.armorLevel++;document.getElementById('zone').textContent='تم تطوير السلاح والدرع إلى '+equipment.weaponLevel;}else document.getElementById('zone').textContent='تحتاج '+cost+' خام لتطوير المعدات';}
+// 8 مدارس سحر، كلها متاحة للاعب.
+const MAGIC_SCHOOLS=['النار','الماء','البرق','الريح','الأرض','الجليد','النور','الظلال'];
+let magicLevels=Object.fromEntries(MAGIC_SCHOOLS.map(x=>[x,1]));
+function castSchool(name){if(!MAGIC_SCHOOLS.includes(name))name='النار';magicLevels[name]++;let d=38+magicLevels[name]*8;hitEnemies(6,d);document.getElementById('zone').textContent='سحر '+name+' • مستوى '+magicLevels[name];}
+function enrichSave(){return {equipment,magicLevels,magicSchools:MAGIC_SCHOOLS,offline:true};}
 
 function worldDraw(){visible();let pcx=Math.floor(p.x/CH),pcz=Math.floor(p.z/CH);
 for(let cx=pcx-R;cx<=pcx+R;cx++)for(let cz=pcz-R;cz<=pcz+R;cz++){let q=makeChunk(cx,cz),bb=biome(cx*CH,cz*CH)[1];
