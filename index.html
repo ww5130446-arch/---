@@ -188,12 +188,13 @@ function drawPortal(x,y,z,rot,col,label){
   draw(x,y+1.3,z,.18,1.45,.18,col,rot);
 }
 function drawWorldPortals(){
-  const r=regionFor(p.x,p.z);
+  const pcx=Math.floor(p.x/CH),pcz=Math.floor(p.z/CH);
+  const bx=pcx*CH,bz=pcz*CH;
   const pts=[
-    {x:p.x,z:p.z-18,to:"شمال",rot:0},
-    {x:p.x,z:p.z+18,to:"جنوب",rot:0},
-    {x:p.x+18,z:p.z,to:"شرق",rot:Math.PI/2},
-    {x:p.x-18,z:p.z,to:"غرب",rot:Math.PI/2}
+    {x:bx,z:bz-CH*.46,to:"شمال",rot:0},
+    {x:bx,z:bz+CH*.46,to:"جنوب",rot:0},
+    {x:bx+CH*.46,z:bz,to:"شرق",rot:Math.PI/2},
+    {x:bx-CH*.46,z:bz,to:"غرب",rot:Math.PI/2}
   ];
   for(const q of pts){
     const d=REGION_DATA[q.to];
@@ -201,10 +202,11 @@ function drawWorldPortals(){
   }
 }
 function useNearestPortal(){
-  const dirs=[["شمال",0,-18],["جنوب",0,18],["شرق",18,0],["غرب",-18,0]];
+  const pcx=Math.floor(p.x/CH),pcz=Math.floor(p.z/CH),bx=pcx*CH,bz=pcz*CH;
+  const dirs=[["شمال",bx,bz-CH*.46],["جنوب",bx,bz+CH*.46],["شرق",bx+CH*.46,bz],["غرب",bx-CH*.46,bz]];
   let best=null,bd=5;
-  for(const [name,dx,dz] of dirs){let d=Math.hypot(p.x-(p.x+dx),p.z-(p.z+dz));if(d<bd){bd=d;best=name}}
-  if(!best){document.getElementById("zone").textContent="اقترب من بوابة انتقال";return}
+  for(const [name,px,pz] of dirs){let d=Math.hypot(p.x-px,p.z-pz);if(d<bd){bd=d;best=name}}
+  if(!best){document.getElementById("zone").textContent="اقترب من بوابة الانتقال الظاهرة على طرف المنطقة";return}
   const jump=180;
   if(best==="شمال")p.z-=jump;
   if(best==="جنوب")p.z+=jump;
