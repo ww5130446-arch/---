@@ -25,7 +25,7 @@ canvas{width:100%;height:100%;display:block}.hud{position:fixed;inset:0;pointer-
 <div class="top"><div class="pill" id="zone">المنطقة: السهول</div><div class="pill" id="stats">المستوى 1 • HP 100</div><div class="pill">مال ∞ • جواهر ∞</div></div>
 <div class="cross"></div>
 <div class="left"><div class="joy"></div><div class="knob" id="knob"></div></div>
-<div class="right"><div class="btn" id="sword">سيف</div><div class="btn" id="atk">هجوم</div><div class="btn" id="magic">سحر</div><div class="btn" id="jump">قفز</div><div class="btn" id="mount">ركوب</div><div class="btn" id="fly">طيران</div><div class="btn" id="egg">بيض</div><div class="btn" id="fish">صيد</div><div class="btn" id="farm">مزرعة</div><div class="btn" id="save">حفظ</div></div>
+<div class="right"><div class="btn" id="sword">سيف</div><div class="btn" id="atk">هجوم</div><div class="btn" id="magic">سحر</div><div class="btn" id="jump">قفز</div><div class="btn" id="mount">ركوب</div><div class="btn" id="fly">طيران</div><div class="btn" id="egg">بيض</div><div class="btn" id="fish">صيد</div><div class="btn" id="farm">مزرعة</div><div class="btn" id="gather">جمع</div><div class="btn" id="bag">حقيبة</div><div class="btn" id="save">حفظ</div></div>
 </div>
 <script>
 const C=document.getElementById('c'),gl=C.getContext('webgl',{antialias:true});
@@ -52,14 +52,16 @@ function noise(x,z){let ix=Math.floor(x),iz=Math.floor(z),fx=x-ix,fz=z-iz;let a=
 function terrain(x,z){return (noise(x*.035,z*.035)-.5)*3+(noise(x*.09,z*.09)-.5)*1.1}
 function biome(x,z){let n=noise(x*.008+70,z*.008-30);if(n<.18)return ['ثلوج',[.72,.82,.9,1]];if(n<.35)return ['صحراء',[.62,.48,.27,1]];if(n>.84)return ['غابة',[.06,.27,.09,1]];if(Math.abs(x%90)<5||Math.abs(z%90)<5)return ['نهر',[.08,.32,.5,1]];return ['سهول',[.16,.36,.12,1]]}
 const p={x:0,y:1.2,z:10,vy:0,ang:0,sword:false,attack:0,magic:0,mounted:false,hp:100,level:1};
-let camA=0,camD=8,keys={},joyX=0,joyY=0,drag=false,lastX=0,lastY=0;
+let camA=0,camD=8,keys={},joyX=0,joyY=0,drag=false,lastX=0,lastY=0,swordBlend=0,swordTarget=0,gameTime=8,xp=0,resources={wood:0,ore:0,herb:0,fish:0},inventoryOpen=false;
 addEventListener('keydown',e=>keys[e.key.toLowerCase()]=1);addEventListener('keyup',e=>keys[e.key.toLowerCase()]=0);
 function setJoy(e){let r=document.querySelector('.left').getBoundingClientRect(),x=e.clientX-(r.left+77),y=e.clientY-(r.top+77),l=Math.hypot(x,y);if(l>55){x=x/l*55;y=y/l*55}joyX=x/55;joyY=y/55;document.getElementById('knob').style.transform='translate('+x+'px,'+y+'px)'}
 document.querySelector('.left').addEventListener('pointerdown',e=>{e.preventDefault();setJoy(e)});document.querySelector('.left').addEventListener('pointermove',e=>{if(e.buttons)setJoy(e)});addEventListener('pointerup',()=>{joyX=joyY=0;document.getElementById('knob').style.transform=''});
 C.addEventListener('pointerdown',e=>{drag=true;lastX=e.clientX});C.addEventListener('pointermove',e=>{if(drag){camA+=(e.clientX-lastX)*.008;lastX=e.clientX}});addEventListener('pointerup',()=>drag=false);
-document.getElementById('sword').onclick=()=>p.sword=!p.sword;
-document.getElementById('atk').onclick=()=>{p.attack=.5;p.sword=true};
-document.getElementById('magic').onclick=()=>p.magic=.8;
+document.getElementById('sword').onclick=()=>{swordTarget=swordTarget>.5?0:1;p.sword=swordTarget>.5};
+function gainXP(v){xp+=v;let need=p.level*20;while(xp>=need){xp-=need;p.level++;p.hp=100;need=p.level*20}}
+function hitEnemies(radius,damage){for(let q of chunks.values())for(let e of q.enemies||[]){let d=Math.hypot(e.x-p.x,e.z-p.z);if(d<radius){e.hp-=damage;if(e.hp<=0){gainXP(12+e.level*4);resources.ore+=e.type==='غول'?2:1;e.dead=1;document.getElementById('zone').textContent='هزمت '+e.type+' • خبرة +'+(12+e.level*4)}}}}
+document.getElementById('atk').onclick=()=>{p.attack=.5;swordTarget=1;p.sword=true;hitEnemies(3.6,35+p.level*5)};
+document.getElementById('magic').onclick=()=>{p.magic=.8;hitEnemies(5.5,28+p.level*7)};
 document.getElementById('jump').onclick=()=>{if(p.y<=terrain(p.x,p.z)+1.25){p.vy=6}};
 document.getElementById('mount').onclick=()=>p.mounted=!p.mounted;
 document.getElementById('save').onclick=()=>localStorage.setItem('magic_world_save',JSON.stringify({x:p.x,y:p.y,z:p.z,level:p.level}));
@@ -85,13 +87,18 @@ document.getElementById('fly').onclick=()=>{flying=!flying;if(flying){p.mounted=
 document.getElementById('egg').onclick=hatchPet;
 document.getElementById('fish').onclick=fish;
 document.getElementById('farm').onclick=farm;
+document.getElementById('gather').onclick=()=>{let found=0;for(let q of chunks.values())for(let n of q.resources||[]){if(!n.used&&Math.hypot(n.x-p.x,n.z-p.z)<4){n.used=1;resources[n.type]++;found++}}document.getElementById('zone').textContent=found?'جمعت '+found+' موارد':'اقترب من شجرة أو خام أو عشبة';};
+document.getElementById('bag').onclick=()=>{inventoryOpen=!inventoryOpen;document.getElementById('zone').textContent=inventoryOpen?'الحقيبة: خشب '+resources.wood+' • خام '+resources.ore+' • أعشاب '+resources.herb+' • سمك '+fishCount:'الحقيبة أُغلقت'};
 
 let chunks=new Map(),CH=32,R=3;
-function makeChunk(cx,cz){let key=cx+','+cz;if(chunks.has(key))return chunks.get(key);let o={trees:[],buildings:[],npcs:[],creatures:[]};let b=biome(cx*CH,cz*CH);let r=()=>hash(cx*1000+o.trees.length,cz*1000+o.trees.length+9);
+function landmarkFor(cx,cz){let h=hash(cx*71,cz*113);if(h>.94)return 'قلعة';if(h>.88)return 'برج سحري';if(h>.80)return 'أطلال';if(h<.07)return 'كهف';return ''}
+function makeChunk(cx,cz){let key=cx+','+cz;if(chunks.has(key))return chunks.get(key);let o={trees:[],buildings:[],npcs:[],creatures:[],enemies:[],resources:[],landmark:landmarkFor(cx,cz)};let b=biome(cx*CH,cz*CH);let r=()=>hash(cx*1000+o.trees.length,cz*1000+o.trees.length+9);
 for(let i=0;i<14;i++){let x=cx*CH+(hash(cx*17+i,cz*23)-.5)*CH,z=cz*CH+(hash(cx*31+i,cz*11)-.5)*CH;if(Math.hypot(x-p.x,z-p.z)<3)continue;o.trees.push({x,z,h:1.5+r()*2})}
 for(let i=0;i<3;i++){let x=cx*CH+(hash(cx*7+i,cz*13)-.5)*CH,z=cz*CH+(hash(cx*19+i,cz*5)-.5)*CH;o.buildings.push({x,z,w:2+r()*3,d:2+r()*3,h:2+r()*5})}
 for(let i=0;i<3;i++){let x=cx*CH+(hash(cx*43+i,cz*7)-.5)*CH,z=cz*CH+(hash(cx*5+i,cz*37)-.5)*CH;o.npcs.push({x,z,a:hash(i+cx,cz+i)*6.28,t:0,role:['تاجر','محارب','ساحر'][i]})}
 if(r()>.35){let x=cx*CH+(r()-.5)*CH,z=cz*CH+(r()-.5)*CH;o.creatures.push({x,z,a:r()*6.28,t:0,type:r()>.5?'ذئب':'غزال'})}
+for(let i=0;i<2;i++){let x=cx*CH+(r()-.5)*CH,z=cz*CH+(r()-.5)*CH;o.enemies.push({x,z,hp:70,level:1+Math.floor(r()*4),a:r()*6.28,t:0,cd:0,type:r()>.65?'غول':r()>.35?'وحش':'ذئب'})}
+for(let i=0;i<5;i++){let x=cx*CH+(r()-.5)*CH,z=cz*CH+(r()-.5)*CH;o.resources.push({x,z,type:r()>.66?'wood':r()>.33?'ore':'herb',used:0})}
 chunks.set(key,o);return o}
 function visible(){let pcx=Math.floor(p.x/CH),pcz=Math.floor(p.z/CH);for(let x=pcx-R;x<=pcx+R;x++)for(let z=pcz-R;z<=pcz+R;z++)makeChunk(x,z);for(let k of chunks.keys()){let a=k.split(',').map(Number);if(Math.abs(a[0]-pcx)>R+1||Math.abs(a[1]-pcz)>R+1)chunks.delete(k)}}
 function worldDraw(){visible();let pcx=Math.floor(p.x/CH),pcz=Math.floor(p.z/CH);
@@ -99,8 +106,11 @@ for(let cx=pcx-R;cx<=pcx+R;cx++)for(let cz=pcz-R;cz<=pcz+R;cz++){let q=makeChunk
 for(let gx=0;gx<4;gx++)for(let gz=0;gz<4;gz++){let x=cx*CH+(gx-.5)*8,z=cz*CH+(gz-.5)*8,y=terrain(x,z);draw(x,y-.35,z,4,.35,4,bb)}
 for(let b of q.buildings){let y=terrain(b.x,b.z);draw(b.x,y+b.h/2,b.z,b.w,b.h/2,b.d,[.3,.24,.18,1]);draw(b.x,y+b.h+.1,b.z,b.w*1.05,.12,b.d*1.05,[.12,.07,.05,1])}
 for(let t of q.trees){let y=terrain(t.x,t.z);draw(t.x,y+t.h*.45,t.z,.22,t.h*.45,.22,[.3,.16,.06,1]);draw(t.x,y+t.h*1.15,t.z,1,1.1,1,[.05,.28,.08,1])}
-for(let n of q.npcs){n.t+=.008;let x=n.x+Math.cos(n.t+n.a)*1.8,z=n.z+Math.sin(n.t+n.a)*1.8,y=terrain(x,z);draw(x,y+1,z,.32,1,.28,[.25,.4,.8,1],n.t+n.a);draw(x,y+2.1,z,.27,.27,.27,[.75,.55,.4,1])}
-for(let a of q.creatures){a.t+=.012;let x=a.x+Math.cos(a.t+a.a)*2,z=a.z+Math.sin(a.t+a.a)*2,y=terrain(x,z);draw(x,y+.55,z,.65,.55,.9,a.type==='ذئب'?[.22,.22,.25,1]:[.55,.45,.3,1],a.t+a.a);draw(x,y+1.1,z,.38,.38,.38,[.4,.3,.25,1])}}}
+for(let n of q.npcs){n.t+=.008;if(!n.gx||Math.hypot(n.gx-n.x,n.gz-n.z)<1){n.gx=n.x+(hash(Math.floor(n.t*10)+n.role.length,Math.floor(n.a*10))-.5)*12;n.gz=n.z+(hash(Math.floor(n.a*10),Math.floor(n.t*10)+3)-.5)*12}let dx=n.gx-n.x,dz=n.gz-n.z,d=Math.hypot(dx,dz)||1;n.x+=dx/d*.018;n.z+=dz/d*.018;let y=terrain(n.x,n.z);let c=n.role==='تاجر'?[.8,.65,.18,1]:n.role==='محارب'?[.55,.18,.2,1]:[.3,.55,.9,1];draw(n.x,y+1,n.z,.32,1,.28,c,Math.atan2(dx,dz));draw(n.x,y+2.1,n.z,.27,.27,.27,[.75,.55,.4,1])}
+for(let a of q.creatures){a.t+=.012;let x=a.x+Math.cos(a.t+a.a)*2,z=a.z+Math.sin(a.t+a.a)*2,y=terrain(x,z);draw(x,y+.55,z,.65,.55,.9,a.type==='ذئب'?[.22,.22,.25,1]:[.55,.45,.3,1],a.t+a.a);draw(x,y+1.1,z,.38,.38,.38,[.4,.3,.25,1])}
+if(q.landmark){let lx=cx*CH+4,lz=cz*CH+4,ly=terrain(lx,lz);let lc=q.landmark==='قلعة'?[.28,.28,.34,1]:q.landmark==='برج سحري'?[.3,.2,.65,1]:q.landmark==='كهف'?[.08,.08,.09,1]:[.35,.25,.18,1];let hh=q.landmark==='برج سحري'?6:q.landmark==='قلعة'?4:2.3;draw(lx,ly+hh/2,lz,2,hh/2,2,lc);draw(lx,ly+hh+.25,lz,2.3,.25,2.3,[.12,.08,.06,1])}
+for(let n of q.resources){if(!n.used){let y=terrain(n.x,n.z);let c=n.type==='wood'?[.3,.16,.06,1]:n.type==='ore'?[.38,.4,.45,1]:[.12,.5,.16,1];draw(n.x,y+.35,n.z,.22,.35,.22,c);}}
+for(let e of q.enemies){if(e.dead)continue;e.t+=.012;e.cd=Math.max(0,e.cd-.016);let d=Math.hypot(p.x-e.x,p.z-e.z);if(d<12){let dx=p.x-e.x,dz=p.z-e.z,l=Math.hypot(dx,dz)||1;e.x+=dx/l*.045;e.z+=dz/l*.045;if(d<1.8&&e.cd<=0){p.hp=Math.max(0,p.hp-(5+e.level*2));e.cd=.9;if(p.hp<=0){p.hp=100;p.x=0;p.z=10;document.getElementById('zone').textContent='سقطت ثم عدت للحياة'}}}else{e.x+=Math.cos(e.t+e.a)*.012;e.z+=Math.sin(e.t+e.a)*.012}let y=terrain(e.x,e.z),ec=e.type==='غول'?[.55,.12,.12,1]:e.type==='وحش'?[.45,.16,.55,1]:[.25,.25,.28,1];draw(e.x,y+.65,e.z,.55,.65,.7,ec,e.t+e.a);draw(e.x,y+1.3,e.z,.34,.34,.34,ec)}}}
 
 function drawPets(t){
  const pcx=Math.floor(p.x/CH),pcz=Math.floor(p.z/CH);
@@ -111,12 +121,12 @@ function drawPets(t){
  }
 }
 
-function render(t){let dt=Math.min(.033,(t-(render.lt||t))/1000);render.lt=t;let fx=Math.sin(camA),fz=Math.cos(camA),rx=Math.cos(camA),rz=-Math.sin(camA);let ix=joyX+(keys.a?-1:0)+(keys.d?1:0),iz=joyY+(keys.w?-1:0)+(keys.s?1:0),l=Math.hypot(ix,iz);if(l>1){ix/=l;iz/=l}let sp=p.mounted?12:7;if(l>.05){p.x+=(rx*ix+fx*iz)*sp*dt;p.z+=(rz*ix+fz*iz)*sp*dt;p.ang=Math.atan2(rx*ix+fx*iz,rz*ix+fz*iz)}let gy=terrain(p.x,p.z)+1.1;if(p.y>gy||p.vy>0){p.vy-=14*dt;p.y+=p.vy*dt;if(p.y<gy){p.y=gy;p.vy=0}}if(p.attack>0)p.attack-=dt;if(p.magic>0)p.magic-=dt;
-let ex=p.x-fx*camD,ez=p.z-fz*camD,ey=p.y+4.8;VP=mul(persp(1,W/H,.1,420),look(ex,ey,ez,p.x,p.y+1.3,p.z));gl.clearColor(.03,.06,.1,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);worldDraw();drawPets(t);
-let br=p.ang;draw(p.x,p.y+1,p.z,.45,1,.3,[.18,.38,.85,1],br);draw(p.x,p.y+2.15,p.z,.31,.31,.31,[.8,.6,.45,1]);let sw=p.attack>0?Math.sin((.5-p.attack)*18)*1.5:0;draw(p.x+Math.sin(br)*.52,p.y+1.1,p.z+Math.cos(br)*.52,.12,.55,.12,[.8,.65,.45,1],br+sw);draw(p.x-Math.sin(br)*.52,p.y+1.1,p.z-Math.cos(br)*.52,.12,.55,.12,[.8,.65,.45,1],br-sw);
-if(p.sword){let sa=p.attack>0?br+1.2:br;draw(p.x+Math.sin(sa)*.72,p.y+1.35,p.z+Math.cos(sa)*.72,.08,.82,.08,[.75,.8,.9,1],sa)}else draw(p.x-Math.sin(br)*.38,p.y+1.35,p.z-Math.cos(br)*.38,.07,.65,.07,[.75,.8,.9,1],br+.4);
+function render(t){let dt=Math.min(.033,(t-(render.lt||t))/1000);render.lt=t;gameTime=(gameTime+dt*.18)%24;swordBlend+=(swordTarget-swordBlend)*Math.min(1,dt*12);let fx=Math.sin(camA),fz=Math.cos(camA),rx=Math.cos(camA),rz=-Math.sin(camA);let ix=joyX+(keys.a?-1:0)+(keys.d?1:0),iz=joyY+(keys.w?-1:0)+(keys.s?1:0),l=Math.hypot(ix,iz);if(l>1){ix/=l;iz/=l}let sp=p.mounted?12:7;if(l>.05){p.x+=(rx*ix+fx*iz)*sp*dt;p.z+=(rz*ix+fz*iz)*sp*dt;p.ang=Math.atan2(rx*ix+fx*iz,rz*ix+fz*iz)}let gy=terrain(p.x,p.z)+1.1;if(p.y>gy||p.vy>0){p.vy-=14*dt;p.y+=p.vy*dt;if(p.y<gy){p.y=gy;p.vy=0}}if(p.attack>0){p.attack-=dt;if(p.attack<=0){swordTarget=0;p.sword=false}}if(p.magic>0)p.magic-=dt;
+let ex=p.x-fx*camD,ez=p.z-fz*camD,ey=p.y+4.8;VP=mul(persp(1,W/H,.1,420),look(ex,ey,ez,p.x,p.y+1.3,p.z));let night=Math.max(0,Math.min(1,Math.abs(gameTime-12)/12));gl.clearColor(.025+.04*(1-night),.045+.07*(1-night),.08+.10*(1-night),1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);worldDraw();drawPets(t);
+let br=p.ang;let bob=l>.05?Math.sin(t*.012)*.035:0;draw(p.x,p.y+1+bob,p.z,.45,1,.3,[.18,.38,.85,1],br);draw(p.x,p.y+2.15,p.z,.31,.31,.31,[.8,.6,.45,1]);let sw=p.attack>0?Math.sin((.5-p.attack)*18)*1.5:0;draw(p.x+Math.sin(br)*.52,p.y+1.1,p.z+Math.cos(br)*.52,.12,.55,.12,[.8,.65,.45,1],br+sw);draw(p.x-Math.sin(br)*.52,p.y+1.1,p.z-Math.cos(br)*.52,.12,.55,.12,[.8,.65,.45,1],br-sw);
+let sa=br+1.2;let handX=p.x+Math.sin(sa)*.72,handZ=p.z+Math.cos(sa)*.72,backX=p.x-Math.sin(br)*.38,backZ=p.z-Math.cos(br)*.38;let sx=backX+(handX-backX)*swordBlend,sz=backZ+(handZ-backZ)*swordBlend;let sy=p.y+1.35+(p.attack>0?Math.sin((.5-p.attack)*18)*.25:0);draw(sx,sy,sz,.08,.82,.08,[.75,.8,.9,1],br+.4+(swordBlend*.8));
 if(p.magic>0)for(let k=0;k<10;k++){let a=t*.004+k*.628;draw(p.x+Math.cos(a)*1.4,p.y+1.2+Math.sin(a)*.5,p.z+Math.sin(a)*1.4,.13,.13,.13,[.3,.7,1,1])}
-let b=biome(p.x,p.z);document.getElementById('zone').textContent='المنطقة: '+b[0]+' • العالم: '+Math.floor(p.x)+' / '+Math.floor(p.z);document.getElementById('stats').textContent='المستوى '+p.level+' • HP '+p.hp+' • '+(flying?'طائر':'حر')+' • رفقاء '+petCount+' • بيض '+eggs+' • '+(p.sword?'السيف مسحوب':'السيف على الظهر');requestAnimationFrame(render)}
+let b=biome(p.x,p.z);document.getElementById('zone').textContent='المنطقة: '+b[0]+' • العالم: '+Math.floor(p.x)+' / '+Math.floor(p.z);document.getElementById('stats').textContent='المستوى '+p.level+' • XP '+xp+'/'+(p.level*20)+' • HP '+p.hp+' • '+(flying?'طائر':'حر')+' • رفقاء '+petCount+' • بيض '+eggs+' • '+(swordBlend>.5?'السيف باليد':'السيف على الظهر')+' • '+Math.floor(gameTime)+':00';requestAnimationFrame(render)}
 requestAnimationFrame(render);
 </script>
 </body>
