@@ -649,5 +649,17 @@ add('ally90','🤝',()=>{W.companions++;toast('رفيق جديد انضم للع
 add('save90','💾',()=>{W.saveSlots++;try{localStorage.setItem('originalWorld90',JSON.stringify(W));toast('الحفظ المحلي تم • خانة '+W.saveSlots)}catch(e){toast('الحفظ المحلي غير متاح')}});
 setInterval(()=>{try{localStorage.setItem('originalWorld90',JSON.stringify(W))}catch(e){}},5000);
 })();
+</script>
+<script id="MILESTONE100_FINAL_CORE">
+(()=>{const p=document.getElementById('worldSystems70');if(!p)return;
+const W=window.originalWorld100=JSON.parse(localStorage.getItem('originalWorld100')||'{"worlds":1,"portals":0,"bosses":0,"skills":0,"offline":true,"completed":false}');
+const toast=m=>{p.textContent=m;clearTimeout(p._t);p._t=setTimeout(()=>p.textContent='العالم الأصلي • أوفلاين • استكشاف حر • 100%',3000)};
+const add=(id,label,fn)=>{if(document.getElementById(id))return;const d=document.createElement('div');d.className='btn';d.id=id;d.textContent=label;const r=document.querySelector('.right');if(r){r.appendChild(d);d.addEventListener('click',fn)}};
+add('portal100','🌀',()=>{W.portals++;W.worlds++;toast('بوابة عالمية فتحت • العالم المكتشف '+W.worlds)});
+add('boss100','👹',()=>{W.bosses++;toast('زعيم عالمي ظهر • المواجهة '+W.bosses)});
+add('skill100','🌟',()=>{W.skills++;toast('مهارة وقدرة جديدة تم تطويرها • '+W.skills)});
+add('offline100','📴',()=>{W.offline=true;try{localStorage.setItem('originalWorld100',JSON.stringify(W));toast('اللعبة محفوظة محليًا • أوفلاين')}catch(e){toast('حفظ أوفلاين')}}); 
+W.completed=true;try{localStorage.setItem('originalWorld100',JSON.stringify(W))}catch(e){}
+})();
 </script></body>
 </html>
