@@ -986,7 +986,53 @@ if(typeof finalRenderSystems==="function"){
   finalRenderSystems=function(t){gameVisualUpgrade210(t);old(t);};
 }
 })();
-</script></script></body>
+</script></script>
+<script id="MILESTONE220_ASSET_INTEGRATION">
+(()=>{if(window.MILESTONE220_ASSET_INTEGRATION)return;window.MILESTONE220_ASSET_INTEGRATION=true;
+window.assetModels220={hero:"animated-3d-procedural",companions:12,creatures:9};
+window.attackAnim220=0;
+window.weaponDraw220=()=>{window.swordBlend=1;window.attackAnim220=1;setTimeout(()=>window.attackAnim220=.45,180);setTimeout(()=>window.attackAnim220=0,420);};
+const H220=drawAnimeHuman;
+drawAnimeHuman=function(x,y,z,scale,pal="hero",rot=0,weapon="sword",isPlayer=false){
+ const s=scale,a=animePalettes[pal]||animePalettes.hero;
+ const moving=isPlayer&&(Math.abs(p.vx||0)+Math.abs(p.vz||0)>.02);
+ const ph=performance.now()*.009+x+z,walk=moving?Math.sin(ph)*.22:Math.sin(ph*.7)*.035;
+ const atk=isPlayer?Math.max(0,window.attackAnim220||0):0;
+ draw(x,y+1.05*s,z,.38*s,.82*s,.27*s,a.body,rot);
+ draw(x,y+1.92*s,z,.30*s,.31*s,.29*s,[.78,.58,.46,1],rot);
+ draw(x,y+2.14*s,z,.34*s,.13*s,.32*s,a.hair,rot);
+ draw(x-.44*s,y+1.12*s,z,.11*s,.45*s,.12*s,a.body,rot-walk-atk*.8);
+ draw(x+.44*s,y+1.12*s,z,.11*s,.45*s,.12*s,a.body,rot+walk+atk*.8);
+ draw(x-.17*s,y+.43*s,z,.13*s,.48*s,.14*s,a.cloth,rot+walk);
+ draw(x+.17*s,y+.43*s,z,.13*s,.48*s,.14*s,a.cloth,rot-walk);
+ draw(x,y+1.28*s,z+.15*s,.43*s,.10*s,.08*s,a.accent,rot);
+ if(weapon==="sword"){
+  const b=Math.max(0,Math.min(1,window.swordBlend||0));
+  const bx=x-Math.sin(rot)*.48*s,bz=z-Math.cos(rot)*.48*s;
+  const hx=x+Math.sin(rot+.70)*.62*s,hz=z+Math.cos(rot+.70)*.62*s;
+  const sx=bx+(hx-bx)*b,sz=bz+(hz-bz)*b;
+  draw(sx,y+1.34*s+atk*.18,sz,.065*s,.88*s,.065*s,[.9,.93,1,1],rot+.42+b*.72+atk*.5);
+  draw(sx,y+1.76*s+atk*.18,sz,.12*s,.065*s,.12*s,[.24,.18,.10,1],rot);
+ }
+};
+const C220=drawFantasyCreature;
+drawFantasyCreature=function(x,y,z,scale,type,rot=0){
+ const s=scale,cols={wolf:[.30,.32,.36,1],fox:[.72,.30,.08,1],bear:[.24,.16,.11,1],tiger:[.78,.42,.08,1],dragon:[.56,.12,.20,1],spirit:[.25,.70,1,1],deer:[.46,.28,.12,1],rabbit:[.68,.62,.52,1],boar:[.32,.20,.14,1]};
+ const c=cols[type]||[.4,.35,.3,1],b=Math.sin(performance.now()*.006+x+z)*.035;
+ draw(x,y+.56*s+b,z,.62*s,.48*s,.88*s,c,rot);
+ draw(x,y+1.02*s+b,z,.38*s,.34*s,.40*s,c,rot);
+ draw(x-.22*s,y+.22*s,z,.11*s,.36*s,.11*s,c,rot);
+ draw(x+.22*s,y+.22*s,z,.11*s,.36*s,.11*s,c,rot);
+ draw(x-.44*s,y+.74*s,z,.15*s,.29*s,.16*s,c,rot);
+ draw(x+.44*s,y+.74*s,z,.15*s,.29*s,.16*s,c,rot);
+ if(type==="dragon"){draw(x,y+1.18*s,z,.78*s,.06*s,.20*s,[.85,.2,.25,1],rot);draw(x,y+.98*s,z,.08*s,.22*s,.08*s,[1,.55,.15,1],rot);}
+};
+if(!window._weaponDraw220Key){window._weaponDraw220Key=true;addEventListener("keydown",e=>{if(e.key==="f"||e.key==="F")weaponDraw220();});}
+const F220=finalRenderSystems;
+if(typeof F220==="function")finalRenderSystems=function(t){if(window.attackAnim220>0)window.attackAnim220=Math.max(0,window.attackAnim220-.018);F220(t);};
+window.characterAssetRoster220=["فارس النور","ساحر الريح","حارس الغابة","صياد الظلال","فارس التنين","مروض الوحوش","ساحر الروح","حارس الجليد","مقاتل البرق","أمير الليل","حارسة القمر","محارب الذئب"];
+})();
+</script></body>
 </html
 <script id="MILESTONE110_VISUAL_POLISH">
 (()=>{const marker="MILESTONE110_VISUAL_POLISH";if(window[marker])return;window[marker]=true;
