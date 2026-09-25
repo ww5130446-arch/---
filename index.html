@@ -465,7 +465,7 @@ function characterVisualUpgrade(){
  msg.textContent='20%: تمت إضافة تفاصيل مرئية فعلية للعالم والمدينة والبرج والس mount والطيران والرفقاء.'; save();
 }
 \nfunction render(t){let dt=Math.min(.033,(t-(render.lt||t))/1000);render.lt=t;gameTime=(gameTime+dt*.18)%24;swordBlend+=(swordTarget-swordBlend)*Math.min(1,dt*12);let fx=Math.sin(camA),fz=Math.cos(camA),rx=Math.cos(camA),rz=-Math.sin(camA);let ix=joyX+(keys.a?-1:0)+(keys.d?1:0),iz=joyY+(keys.w?-1:0)+(keys.s?1:0),l=Math.hypot(ix,iz);if(l>1){ix/=l;iz/=l}let sp=p.mounted?12:7;if(l>.05){p.x+=(rx*ix+fx*iz)*sp*dt;p.z+=(rz*ix+fz*iz)*sp*dt;p.ang=Math.atan2(rx*ix+fx*iz,rz*ix+fz*iz)}let gy=terrain(p.x,p.z)+1.1;if(p.y>gy||p.vy>0){p.vy-=14*dt;p.y+=p.vy*dt;if(p.y<gy){p.y=gy;p.vy=0}}if(p.attack>0){p.attack-=dt;if(p.attack<=0){swordTarget=0;p.sword=false}}if(p.magic>0)p.magic-=dt;
-let ex=p.x-fx*camD,ez=p.z-fz*camD,ey=p.y+4.8;VP=mul(persp(1,W/H,.1,420),look(ex,ey,ez,p.x,p.y+1.3,p.z));let night=Math.max(0,Math.min(1,Math.abs(gameTime-12)/12));gl.clearColor(.025+.04*(1-night),.045+.07*(1-night),.08+.10*(1-night),1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);worldDraw();drawWorldRoads();drawWorldInteriors();drawWorldDetail();drawMountVisual();drawWorldPortals();drawPets(t);
+let ex=p.x-fx*camD,ez=p.z-fz*camD,ey=p.y+4.8;VP=mul(persp(1,W/H,.1,420),look(ex,ey,ez,p.x,p.y+1.3,p.z));let night=Math.max(0,Math.min(1,Math.abs(gameTime-12)/12));gl.clearColor(.025+.04*(1-night),.045+.07*(1-night),.08+.10*(1-night),1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);worldDraw();drawWorldRoads();drawWorldInteriors();drawWorldDetail();drawMountVisual();drawWorldPortals();drawPets(t);visualPolish110(t);
 let br=p.ang;let bob=l>.05?Math.sin(t*.012)*.035:0;drawAnimeHuman(p.x,p.y+bob,p.z,1.0,p.characterPal||"hero",br,"sword",true);
 let sa=br+1.2;let handX=p.x+Math.sin(sa)*.72,handZ=p.z+Math.cos(sa)*.72,backX=p.x-Math.sin(br)*.38,backZ=p.z-Math.cos(br)*.38;let sx=backX+(handX-backX)*swordBlend,sz=backZ+(handZ-backZ)*swordBlend;let sy=p.y+1.35+(p.attack>0?Math.sin((.5-p.attack)*18)*.25:0);draw(sx,sy,sz,.08,.82,.08,[.75,.8,.9,1],br+.4+(swordBlend*.8));
 if(p.magic>0)for(let k=0;k<10;k++){let a=t*.004+k*.628;draw(p.x+Math.cos(a)*1.4,p.y+1.2+Math.sin(a)*.5,p.z+Math.sin(a)*1.4,.13,.13,.13,[.3,.7,1,1])}
@@ -662,4 +662,18 @@ add('offline100','📴',()=>{W.offline=true;try{localStorage.setItem('originalWo
 W.completed=true;try{localStorage.setItem('originalWorld100',JSON.stringify(W))}catch(e){}
 })();
 </script></body>
-</html>
+</html
+<script id="MILESTONE110_VISUAL_POLISH">
+(()=>{const marker="MILESTONE110_VISUAL_POLISH";if(window[marker])return;window[marker]=true;
+function visualPolish110(t){
+ try{
+  const sun=Math.max(0,Math.sin((gameTime-6)*Math.PI/12));
+  for(let i=0;i<7;i++){let a=t*.00025+i*.897;let d=9+i*2.2;draw(p.x+Math.cos(a)*d,p.y+5+Math.sin(a*.7)*1.5,p.z+Math.sin(a)*d,.045,.045,.045,[.35+.45*sun,.55+.35*sun,1,1]);}
+  for(let i=0;i<4;i++){let a=t*.001+i*1.57;draw(p.x+Math.cos(a)*1.05,p.y+.08,p.z+Math.sin(a)*1.05,.5,.035,.5,[.04,.07,.1,.65],0);}
+  draw(p.x,p.y+2.35,p.z,.7,.025,.12,[.05,.8,.35,.7],0);
+ }catch(e){}
+}
+const needle='drawWorldDetail();drawMountVisual();';
+if(!h.includes(needle)){return}
+})();
+</script>>
