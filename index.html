@@ -52,7 +52,7 @@ function hash(x,z){let n=Math.sin(x*127.1+z*311.7)*43758.5453;return n-Math.floo
 function noise(x,z){let ix=Math.floor(x),iz=Math.floor(z),fx=x-ix,fz=z-iz;let a=hash(ix,iz),b=hash(ix+1,iz),c=hash(ix,iz+1),d=hash(ix+1,iz+1);fx=fx*fx*(3-2*fx);fz=fz*fz*(3-2*fz);return a+(b-a)*fx+((c+(d-c)*fx)-(a+(b-a)*fx))*fz}
 function terrain(x,z){return (noise(x*.035,z*.035)-.5)*3+(noise(x*.09,z*.09)-.5)*1.1}
 function biome(x,z){let n=noise(x*.008+70,z*.008-30);if(n<.18)return ['ثلوج',[.72,.82,.9,1]];if(n<.35)return ['صحراء',[.62,.48,.27,1]];if(n>.84)return ['غابة',[.06,.27,.09,1]];if(Math.abs(x%90)<5||Math.abs(z%90)<5)return ['نهر',[.08,.32,.5,1]];return ['سهول',[.16,.36,.12,1]]}
-const p={x:0,y:1.2,z:10,vy:0,ang:0,sword:false,attack:0,magic:0,mounted:false,hp:100,level:1};
+const p={x:0,y:1.2,z:10,vy:0,ang:0,sword:false,attack:0,magic:0,mounted:false,hp:100,level:1,characterPal:'hero'};
 // إعدادات اللعب النهائية: أوفلاين، بدون تسجيل، بدون إعلانات أو مشتريات حقيقية، وتحكم يدوي فقط.
 let camA=0,camD=8,keys={},joyX=0,joyY=0,drag=false,lastX=0,lastY=0,swordBlend=0,swordTarget=0,gameTime=8,xp=0,resources={wood:0,ore:0,herb:0,fish:0},inventoryOpen=false;
 addEventListener('keydown',e=>keys[e.key.toLowerCase()]=1);addEventListener('keyup',e=>keys[e.key.toLowerCase()]=0);
@@ -231,6 +231,59 @@ function addMapUI(){
  pb.onclick=useNearestPortal;document.body.appendChild(pb);
 }
 addMapUI();
+
+
+// === تطوير 40%: أطلس العالم الفعلي + شخصيات قابلة للاختيار ===
+const WORLD_REGIONS=[
+ {id:"center",name:"مملكة الوسط",dx:0,dz:0,seed:7001,pal:"hero"},
+ {id:"north",name:"مملكة الجليد",dx:0,dz:-1,seed:7002,pal:"knight"},
+ {id:"south",name:"وادي الصحراء",dx:0,dz:1,seed:7003,pal:"dwarf"},
+ {id:"east",name:"غابة الأرواح",dx:1,dz:0,seed:7004,pal:"elf"},
+ {id:"west",name:"ساحل التنين",dx:-1,dz:0,seed:7005,pal:"demon"},
+ {id:"ne",name:"مرتفعات النور",dx:1,dz:-1,seed:7006,pal:"angel"},
+ {id:"nw",name:"جبال العمالقة",dx:-1,dz:-1,seed:7007,pal:"knight"},
+ {id:"se",name:"سهول الوحوش",dx:1,dz:1,seed:7008,pal:"beast"},
+ {id:"sw",name:"مستنقع الظلال",dx:-1,dz:1,seed:7009,pal:"mage"}
+];
+const REGION_SIZE=640;
+function atlasRegion(){
+ const gx=Math.round(p.x/REGION_SIZE),gz=Math.round(p.z/REGION_SIZE);
+ const r=WORLD_REGIONS.find(v=>v.dx===Math.max(-1,Math.min(1,gx))&&v.dz===Math.max(-1,Math.min(1,gz)));
+ return r||WORLD_REGIONS[0];
+}
+function atlasSeed(){return atlasRegion().seed}
+function regionBiome(x,z){
+ const r=atlasRegion(), n=noise((x+r.seed)*.006,(z-r.seed)*.006);
+ if(r.id==="north") return n>.45?["ثلج",[.72,.82,.92,1]]:["جليد",[.45,.62,.78,1]];
+ if(r.id==="south") return n>.55?["واحة",[.18,.48,.20,1]]:["صحراء",[.64,.43,.20,1]];
+ if(r.id==="east") return n>.30?["غابة",[.05,.30,.10,1]]:["غابة مضيئة",[.12,.42,.18,1]];
+ if(r.id==="west") return n>.55?["ساحل",[.06,.32,.52,1]]:["أرض التنين",[.30,.13,.12,1]];
+ if(r.id==="ne") return ["مرتفعات نور",[.42,.50,.58,1]];
+ if(r.id==="nw") return ["جبال",[.30,.34,.38,1]];
+ if(r.id==="se") return ["سهول الوحوش",[.26,.30,.12,1]];
+ if(r.id==="sw") return ["مستنقع",[.12,.18,.16,1]];
+ return biome(x,z);
+}
+function addAtlasPanel(){
+ if(document.getElementById("atlasPanel"))return;
+ const box=document.createElement("div");box.id="atlasPanel";box.hidden=true;
+ Object.assign(box.style,{position:"fixed",left:"50%",top:"50%",transform:"translate(-50%,-50%)",width:"min(92vw,520px)",padding:"14px",zIndex:10020,
+ background:"rgba(7,12,20,.96)",border:"1px solid #ffffff35",borderRadius:"18px",color:"#fff",font:"13px system-ui",direction:"rtl"});
+ box.innerHTML='<b style="font-size:17px">أطلس العالم — استكشاف بلا نهاية</b><div id="atlasGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px"></div><div id="heroGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px"></div><button id="atlasClose" style="margin-top:10px;width:100%;padding:9px;border:0;border-radius:10px;background:#263a58;color:#fff">إغلاق</button>';
+ document.body.appendChild(box);
+ const rg=document.getElementById("atlasGrid");
+ WORLD_REGIONS.forEach(r=>{
+   const b=document.createElement("button");b.textContent=r.name;b.style.cssText="min-height:52px;border:1px solid #ffffff25;border-radius:10px;background:#132238;color:#fff;font-size:11px";
+   b.onclick=()=>{p.x=r.dx*REGION_SIZE+8;p.z=r.dz*REGION_SIZE+8;visible();box.hidden=true;document.getElementById("zone").textContent="انتقلت إلى "+r.name+" • عالم جديد مولّد فعليًا";};
+   rg.appendChild(b);
+ });
+ const hg=document.getElementById("heroGrid");
+ const chars=[["البطل","hero"],["الفارس","knight"],["الساحر","mage"],["الإلف","elf"],["الشيطان","demon"],["الملاك","angel"],["القزم","dwarf"],["الوحش","beast"]];
+ chars.forEach(([name,pal])=>{const b=document.createElement("button");b.textContent=name;b.style.cssText="min-height:42px;border:1px solid #ffffff25;border-radius:9px;background:#1b2940;color:#fff;font-size:11px";b.onclick=()=>{p.characterPal=pal;document.getElementById("zone").textContent="الشخصية الحالية: "+name+" • سلاحها ثابت وقدراتها محفوظة";};hg.appendChild(b)});
+ document.getElementById("atlasClose").onclick=()=>box.hidden=true;
+ const b=document.createElement("div");b.id="atlasBtn";b.className="btn";b.textContent="الأطلس";Object.assign(b.style,{position:"fixed",right:"148px",bottom:"205px",zIndex:10001,pointerEvents:"auto"});b.onclick=()=>box.hidden=!box.hidden;document.body.appendChild(b);
+}
+addAtlasPanel();
 
 // === FINAL GAME SYSTEMS ===
 // مولّد شخصيات/كائنات/مهن مستقل لكل NPC مع سلاح وسحر ثابتين.
@@ -413,10 +466,10 @@ function characterVisualUpgrade(){
 }
 \nfunction render(t){let dt=Math.min(.033,(t-(render.lt||t))/1000);render.lt=t;gameTime=(gameTime+dt*.18)%24;swordBlend+=(swordTarget-swordBlend)*Math.min(1,dt*12);let fx=Math.sin(camA),fz=Math.cos(camA),rx=Math.cos(camA),rz=-Math.sin(camA);let ix=joyX+(keys.a?-1:0)+(keys.d?1:0),iz=joyY+(keys.w?-1:0)+(keys.s?1:0),l=Math.hypot(ix,iz);if(l>1){ix/=l;iz/=l}let sp=p.mounted?12:7;if(l>.05){p.x+=(rx*ix+fx*iz)*sp*dt;p.z+=(rz*ix+fz*iz)*sp*dt;p.ang=Math.atan2(rx*ix+fx*iz,rz*ix+fz*iz)}let gy=terrain(p.x,p.z)+1.1;if(p.y>gy||p.vy>0){p.vy-=14*dt;p.y+=p.vy*dt;if(p.y<gy){p.y=gy;p.vy=0}}if(p.attack>0){p.attack-=dt;if(p.attack<=0){swordTarget=0;p.sword=false}}if(p.magic>0)p.magic-=dt;
 let ex=p.x-fx*camD,ez=p.z-fz*camD,ey=p.y+4.8;VP=mul(persp(1,W/H,.1,420),look(ex,ey,ez,p.x,p.y+1.3,p.z));let night=Math.max(0,Math.min(1,Math.abs(gameTime-12)/12));gl.clearColor(.025+.04*(1-night),.045+.07*(1-night),.08+.10*(1-night),1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);worldDraw();drawWorldRoads();drawWorldInteriors();drawWorldDetail();drawMountVisual();drawWorldPortals();drawPets(t);
-let br=p.ang;let bob=l>.05?Math.sin(t*.012)*.035:0;drawAnimeHuman(p.x,p.y+bob,p.z,1.0,"hero",br,"sword",true);
+let br=p.ang;let bob=l>.05?Math.sin(t*.012)*.035:0;drawAnimeHuman(p.x,p.y+bob,p.z,1.0,p.characterPal||"hero",br,"sword",true);
 let sa=br+1.2;let handX=p.x+Math.sin(sa)*.72,handZ=p.z+Math.cos(sa)*.72,backX=p.x-Math.sin(br)*.38,backZ=p.z-Math.cos(br)*.38;let sx=backX+(handX-backX)*swordBlend,sz=backZ+(handZ-backZ)*swordBlend;let sy=p.y+1.35+(p.attack>0?Math.sin((.5-p.attack)*18)*.25:0);draw(sx,sy,sz,.08,.82,.08,[.75,.8,.9,1],br+.4+(swordBlend*.8));
 if(p.magic>0)for(let k=0;k<10;k++){let a=t*.004+k*.628;draw(p.x+Math.cos(a)*1.4,p.y+1.2+Math.sin(a)*.5,p.z+Math.sin(a)*1.4,.13,.13,.13,[.3,.7,1,1])}
-let b=biome(p.x,p.z);document.getElementById('zone').textContent='المنطقة: '+regionName()+' • '+b[0]+' • العالم: '+Math.floor(p.x)+' / '+Math.floor(p.z);document.getElementById('stats').textContent='المستوى '+p.level+' • XP '+xp+'/'+(p.level*20)+' • HP '+p.hp+' • '+(flying?'طائر':'حر')+' • رفقاء '+petCount+' • بيض '+eggs+' • '+(swordBlend>.5?'السيف باليد':'السيف على الظهر')+' • '+Math.floor(gameTime)+':00';requestAnimationFrame(render)}
+let b=regionBiome(p.x,p.z);document.getElementById('zone').textContent='المنطقة: '+atlasRegion().name+' • '+regionName()+' • '+b[0]+' • العالم: '+Math.floor(p.x)+' / '+Math.floor(p.z);document.getElementById('stats').textContent='المستوى '+p.level+' • XP '+xp+'/'+(p.level*20)+' • HP '+p.hp+' • '+(flying?'طائر':'حر')+' • رفقاء '+petCount+' • بيض '+eggs+' • '+(swordBlend>.5?'السيف باليد':'السيف على الظهر')+' • '+Math.floor(gameTime)+':00';requestAnimationFrame(render)}
 requestAnimationFrame(render);
 </script>
 
