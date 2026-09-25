@@ -162,6 +162,74 @@ function drawFantasyCreature(x,y,z,scale,type,rot=0){
 }
 
 
+
+// === طبقة العالم الرباعي اللامحدود + خريطة اللعبة ===
+let worldRegion="الوسط";
+const REGION_DATA={
+  شمال:{name:"مملكة الجليد",c:[.16,.28,.52,1],seed:9101},
+  جنوب:{name:"وادي الصحراء",c:[.52,.30,.10,1],seed:9202},
+  شرق:{name:"غابة الأرواح",c:[.05,.34,.16,1],seed:9303},
+  غرب:{name:"ساحل التنين",c:[.05,.25,.42,1],seed:9404}
+};
+function regionFor(x,z){
+  if(Math.abs(x)<80&&Math.abs(z)<80)return "الوسط";
+  if(z<-80)return "شمال";
+  if(z>80)return "جنوب";
+  if(x>80)return "شرق";
+  return "غرب";
+}
+function regionName(){let r=regionFor(p.x,p.z);return r==="الوسط"?"العالم المركزي":REGION_DATA[r].name}
+function drawPortal(x,y,z,rot,col,label){
+  for(let i=0;i<3;i++){
+    let s=1.2+i*.28, yy=y+1.3+i*.08;
+    draw(x,yy,z,s,.10,s*.22,col,rot);
+    draw(x,yy,z,s*.22,.10,s,col,rot);
+  }
+  draw(x,y+1.3,z,.18,1.45,.18,col,rot);
+}
+function drawWorldPortals(){
+  const r=regionFor(p.x,p.z);
+  const pts=[
+    {x:p.x,z:p.z-18,to:"شمال",rot:0},
+    {x:p.x,z:p.z+18,to:"جنوب",rot:0},
+    {x:p.x+18,z:p.z,to:"شرق",rot:Math.PI/2},
+    {x:p.x-18,z:p.z,to:"غرب",rot:Math.PI/2}
+  ];
+  for(const q of pts){
+    const d=REGION_DATA[q.to];
+    drawPortal(q.x,terrain(q.x,q.z)+.05,q.z,q.rot,d.c,q.to);
+  }
+}
+function useNearestPortal(){
+  const dirs=[["شمال",0,-18],["جنوب",0,18],["شرق",18,0],["غرب",-18,0]];
+  let best=null,bd=5;
+  for(const [name,dx,dz] of dirs){let d=Math.hypot(p.x-(p.x+dx),p.z-(p.z+dz));if(d<bd){bd=d;best=name}}
+  if(!best){document.getElementById("zone").textContent="اقترب من بوابة انتقال";return}
+  const jump=180;
+  if(best==="شمال")p.z-=jump;
+  if(best==="جنوب")p.z+=jump;
+  if(best==="شرق")p.x+=jump;
+  if(best==="غرب")p.x-=jump;
+  visible();
+  document.getElementById("zone").textContent="انتقلت إلى "+REGION_DATA[best].name+" • العالم مستمر بلا نهاية";
+}
+function addMapUI(){
+ const m=document.createElement("div");m.id="worldMap";m.hidden=true;
+ Object.assign(m.style,{position:"fixed",right:"12px",top:"72px",width:"250px",height:"190px",zIndex:9998,
+ background:"rgba(8,18,25,.94)",border:"1px solid #ffffff40",borderRadius:"14px",padding:"10px",
+ boxSizing:"border-box",font:"12px system-ui",color:"#fff",direction:"rtl"});
+ m.innerHTML='<b>خريطة العالم</b><div id="mapInfo" style="margin:6px 0;line-height:1.6"></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;text-align:center"><span>الشمال<br>❄</span><span>الوسط<br>✦</span><span>الجنوب<br>☀</span><span>الغرب<br>🐉</span><span>الشرق<br>🌲</span></div><small>كل اتجاه يولّد عالمًا جديدًا إجرائيًا بلا نهاية.</small>';
+ document.body.appendChild(m);
+ const b=document.createElement("div");b.id="mapBtn";b.className="btn";b.textContent="خريطة";
+ Object.assign(b.style,{position:"fixed",right:"12px",bottom:"205px",zIndex:10001,pointerEvents:"auto"});
+ b.onclick=()=>{m.hidden=!m.hidden;document.getElementById("mapInfo").textContent="المنطقة: "+regionName()+" • الإحداثيات: "+Math.floor(p.x)+", "+Math.floor(p.z)};
+ document.body.appendChild(b);
+ const pb=document.createElement("div");pb.id="portalBtn";pb.className="btn";pb.textContent="بوابة";
+ Object.assign(pb.style,{position:"fixed",right:"80px",bottom:"205px",zIndex:10001,pointerEvents:"auto"});
+ pb.onclick=useNearestPortal;document.body.appendChild(pb);
+}
+addMapUI();
+
 // === FINAL GAME SYSTEMS ===
 // مولّد شخصيات/كائنات/مهن مستقل لكل NPC مع سلاح وسحر ثابتين.
 const NPC_ARCHETYPES=[
@@ -342,11 +410,11 @@ function characterVisualUpgrade(){
  msg.textContent='20%: تمت إضافة تفاصيل مرئية فعلية للعالم والمدينة والبرج والس mount والطيران والرفقاء.'; save();
 }
 \nfunction render(t){let dt=Math.min(.033,(t-(render.lt||t))/1000);render.lt=t;gameTime=(gameTime+dt*.18)%24;swordBlend+=(swordTarget-swordBlend)*Math.min(1,dt*12);let fx=Math.sin(camA),fz=Math.cos(camA),rx=Math.cos(camA),rz=-Math.sin(camA);let ix=joyX+(keys.a?-1:0)+(keys.d?1:0),iz=joyY+(keys.w?-1:0)+(keys.s?1:0),l=Math.hypot(ix,iz);if(l>1){ix/=l;iz/=l}let sp=p.mounted?12:7;if(l>.05){p.x+=(rx*ix+fx*iz)*sp*dt;p.z+=(rz*ix+fz*iz)*sp*dt;p.ang=Math.atan2(rx*ix+fx*iz,rz*ix+fz*iz)}let gy=terrain(p.x,p.z)+1.1;if(p.y>gy||p.vy>0){p.vy-=14*dt;p.y+=p.vy*dt;if(p.y<gy){p.y=gy;p.vy=0}}if(p.attack>0){p.attack-=dt;if(p.attack<=0){swordTarget=0;p.sword=false}}if(p.magic>0)p.magic-=dt;
-let ex=p.x-fx*camD,ez=p.z-fz*camD,ey=p.y+4.8;VP=mul(persp(1,W/H,.1,420),look(ex,ey,ez,p.x,p.y+1.3,p.z));let night=Math.max(0,Math.min(1,Math.abs(gameTime-12)/12));gl.clearColor(.025+.04*(1-night),.045+.07*(1-night),.08+.10*(1-night),1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);worldDraw();drawWorldRoads();drawWorldInteriors();drawWorldDetail();drawMountVisual();drawPets(t);
+let ex=p.x-fx*camD,ez=p.z-fz*camD,ey=p.y+4.8;VP=mul(persp(1,W/H,.1,420),look(ex,ey,ez,p.x,p.y+1.3,p.z));let night=Math.max(0,Math.min(1,Math.abs(gameTime-12)/12));gl.clearColor(.025+.04*(1-night),.045+.07*(1-night),.08+.10*(1-night),1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);worldDraw();drawWorldRoads();drawWorldInteriors();drawWorldDetail();drawMountVisual();drawWorldPortals();drawPets(t);
 let br=p.ang;let bob=l>.05?Math.sin(t*.012)*.035:0;drawAnimeHuman(p.x,p.y+bob,p.z,1.0,"hero",br,"sword",true);
 let sa=br+1.2;let handX=p.x+Math.sin(sa)*.72,handZ=p.z+Math.cos(sa)*.72,backX=p.x-Math.sin(br)*.38,backZ=p.z-Math.cos(br)*.38;let sx=backX+(handX-backX)*swordBlend,sz=backZ+(handZ-backZ)*swordBlend;let sy=p.y+1.35+(p.attack>0?Math.sin((.5-p.attack)*18)*.25:0);draw(sx,sy,sz,.08,.82,.08,[.75,.8,.9,1],br+.4+(swordBlend*.8));
 if(p.magic>0)for(let k=0;k<10;k++){let a=t*.004+k*.628;draw(p.x+Math.cos(a)*1.4,p.y+1.2+Math.sin(a)*.5,p.z+Math.sin(a)*1.4,.13,.13,.13,[.3,.7,1,1])}
-let b=biome(p.x,p.z);document.getElementById('zone').textContent='المنطقة: '+b[0]+' • العالم: '+Math.floor(p.x)+' / '+Math.floor(p.z);document.getElementById('stats').textContent='المستوى '+p.level+' • XP '+xp+'/'+(p.level*20)+' • HP '+p.hp+' • '+(flying?'طائر':'حر')+' • رفقاء '+petCount+' • بيض '+eggs+' • '+(swordBlend>.5?'السيف باليد':'السيف على الظهر')+' • '+Math.floor(gameTime)+':00';requestAnimationFrame(render)}
+let b=biome(p.x,p.z);document.getElementById('zone').textContent='المنطقة: '+regionName()+' • '+b[0]+' • العالم: '+Math.floor(p.x)+' / '+Math.floor(p.z);document.getElementById('stats').textContent='المستوى '+p.level+' • XP '+xp+'/'+(p.level*20)+' • HP '+p.hp+' • '+(flying?'طائر':'حر')+' • رفقاء '+petCount+' • بيض '+eggs+' • '+(swordBlend>.5?'السيف باليد':'السيف على الظهر')+' • '+Math.floor(gameTime)+':00';requestAnimationFrame(render)}
 requestAnimationFrame(render);
 </script>
 
