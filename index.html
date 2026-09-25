@@ -821,6 +821,48 @@ setInterval(()=>{
 },5000);
 window.addEventListener('beforeunload',save);
 })();
+</script>
+<style id="MILESTONE150_ANIME_ROSTER">
+#anime150{position:fixed;left:10px;top:70px;z-index:10003;width:235px;max-height:55vh;overflow:auto;background:rgba(6,10,18,.94);border:1px solid #ffffff24;border-radius:12px;padding:9px;color:#fff;font:11px Arial}
+#anime150 h3{margin:0 0 6px;font-size:13px}
+.a150{display:flex;align-items:center;gap:7px;padding:6px;border-radius:8px;background:#ffffff0b;margin:4px 0}
+.a150 .av{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-weight:bold;background:linear-gradient(135deg,#6b4b9b,#d46a8b)}
+#anime150 button{margin:3px;padding:5px 7px;border:0;border-radius:7px;background:#ffffff18;color:#fff}
+</style>
+<div id="anime150"><h3>شخصيات أنمي مجانية</h3><div id="animeList150"></div><button id="random150">اختيار شخصية</button></div>
+<script id="MILESTONE150_ANIME_ROSTER">
+(()=>{
+if(window.__anime150)return;window.__anime150=true;
+const roster=[
+["آرين","سيف","نار",86],["كايرو","سيف مظلم","ظل",92],["رين","سحر","برق",88],["هايرو","رمح","ريح",81],
+["كاي","قوس","جليد",79],["سورا","شفرة مزدوجة","ضوء",90],["راي","سيف","برق",87],["يونا","عصا","نبات",76],
+["زيرو","سيف أسود","ظلام",95],["آكي","خنجر","سم",73],["نيرو","منجل","ظل",91],["شيرو","قوس","جليد",84],
+["رِيو","قبضة","نار",82],["ليان","سيف","ماء",80],["أورو","فأس","أرض",78],["إيلا","سحر","نور",89],
+["فارس","درع","حماية",85],["مير","سيف","روح",93],["تاي","رمح","برق",77],["لوكا","قوس","ريح",74],
+["كاين","سيف","نار",96],["رينو","سحر","نجوم",94],["آسو","شفرة","ظل",83],["مايا","عصا","ثلج",80]
+];
+const list=document.getElementById("animeList150");
+function render(){
+ list.innerHTML="";
+ roster.forEach((r,i)=>{
+  const d=document.createElement("div");d.className="a150";
+  d.innerHTML='<span class="av">'+r[0][0]+'</span><span><b>'+r[0]+'</b><br>'+r[1]+' • '+r[2]+' • قوة '+r[3]+'</span>';
+  d.addEventListener("click",()=>select(i));list.appendChild(d);
+ });
+}
+function select(i){
+ const r=roster[i];
+ window.selectedAnimeCharacter={name:r[0],weapon:r[1],magic:r[2],power:r[3],index:i};
+ try{localStorage.setItem("selectedAnimeCharacter",JSON.stringify(window.selectedAnimeCharacter))}catch(e){}
+ const old=document.getElementById("animeSelected150");if(old)old.remove();
+ const x=document.createElement("div");x.id="animeSelected150";x.textContent="المختار: "+r[0]+" • "+r[1]+" • "+r[2];
+ x.style="margin-top:6px;padding:6px;background:#ffffff12;border-radius:7px";
+ document.getElementById("anime150").appendChild(x);
+}
+document.getElementById("random150").onclick=()=>select(Math.floor(Math.random()*roster.length));
+render();
+try{const s=JSON.parse(localStorage.getItem("selectedAnimeCharacter")||"null");if(s)select(s.index||0)}catch(e){}
+})();
 </script></body>
 </html
 <script id="MILESTONE110_VISUAL_POLISH">
