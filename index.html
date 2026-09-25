@@ -661,6 +661,27 @@ add('skill100','🌟',()=>{W.skills++;toast('مهارة وقدرة جديدة ت
 add('offline100','📴',()=>{W.offline=true;try{localStorage.setItem('originalWorld100',JSON.stringify(W));toast('اللعبة محفوظة محليًا • أوفلاين')}catch(e){toast('حفظ أوفلاين')}}); 
 W.completed=true;try{localStorage.setItem('originalWorld100',JSON.stringify(W))}catch(e){}
 })();
+</script>
+<style id="MILESTONE120_CORE_POLISH">
+#core120{position:fixed;left:10px;top:58px;z-index:9999;background:rgba(7,13,22,.86);border:1px solid #ffffff28;border-radius:12px;padding:7px 9px;color:#fff;font:10px Arial;pointer-events:none}
+</style>
+<div id="core120">تحسين الأداء • واجهة القتال • نظام الحالات • أوفلاين</div>
+<script id="MILESTONE120_CORE_POLISH">
+(()=>{if(window.__core120)return;window.__core120=true;
+const el=document.getElementById('core120');
+const S={stamina:100,combo:0,lastAttack:0,damageBoost:1,guard:false};
+window.coreCombat120=S;
+const set=m=>{if(el){el.textContent=m;clearTimeout(el._t);el._t=setTimeout(()=>el.textContent='تحسين الأداء • واجهة القتال • نظام الحالات • أوفلاين',2200)}};
+const oldAttack=window.attack;
+window.addEventListener('keydown',e=>{
+ if(e.key==='Shift'){S.guard=true;set('حراسة الدرع مفعّلة');}
+ if(e.key===' ')S.stamina=Math.max(0,S.stamina-8);
+});
+window.addEventListener('keyup',e=>{if(e.key==='Shift')S.guard=false});
+setInterval(()=>{S.stamina=Math.min(100,S.stamina+2);if(S.combo>0&&Date.now()-S.lastAttack>1800)S.combo=0},250);
+window.addEventListener('beforeunload',()=>{try{localStorage.setItem('coreCombat120',JSON.stringify(S))}catch(e){}});
+try{Object.assign(S,JSON.parse(localStorage.getItem('coreCombat120')||'{}'))}catch(e){}
+})();
 </script></body>
 </html
 <script id="MILESTONE110_VISUAL_POLISH">
