@@ -603,5 +603,24 @@ if(!window.__livingWorld){window.__livingWorld=true;
  }catch(e){}},5000);
 })();
 </script>
-</body>
+
+<script id="MILESTONE70_ORIGINAL_WORLD">
+(()=>{ 
+ const panel=document.createElement('div');
+ panel.id='worldSystems70';
+ panel.style.cssText='position:fixed;left:50%;top:10px;transform:translateX(-50%);z-index:20;background:#0b1422e8;border:1px solid #ffffff30;border-radius:14px;padding:8px 10px;color:#fff;font:11px Arial;max-width:78%;text-align:center;pointer-events:none';
+ panel.innerHTML='عالم حي • مدن ومنازل ومتاجر • رفقاء • مخزن • دنجنز';
+ document.body.appendChild(panel);
+ const W=window.originalWorld70=JSON.parse(localStorage.getItem('originalWorld70')||'{"home":false,"shopVisits":0,"companionGuard":false,"companionCarry":0,"dungeonRooms":0,"relationships":0}');
+ const toast=(m)=>{panel.textContent=m;clearTimeout(panel._t);panel._t=setTimeout(()=>panel.textContent='عالم حي • مدن ومنازل ومتاجر • رفقاء • مخزن • دنجنز',2200)};
+ const addBtn=(id,label,fn)=>{if(document.getElementById(id))return;const d=document.createElement('div');d.className='btn';d.id=id;d.textContent=label;const r=document.querySelector('.right');if(r){r.appendChild(d);d.addEventListener('click',fn)}};
+ addBtn('home70','🏠',()=>{W.home=!W.home;toast(W.home?'دخلت بيتك • راحة وتخزين وحفظ محلي':'خرجت من البيت')});
+ addBtn('town70','🏪',()=>{W.shopVisits++;toast('المدينة • متجر ومطعم ومواطنون • زيارة '+W.shopVisits)});
+ addBtn('guard70','🛡',()=>{W.companionGuard=!W.companionGuard;toast(W.companionGuard?'الرفيق يحرس المنطقة':'الرفيق عاد للفريق')});
+ addBtn('carry70','🎒',()=>{W.companionCarry++;toast('الرفيق حمل غرضًا • المخزن +'+W.companionCarry)});
+ addBtn('dungeon70','⚔',()=>{W.dungeonRooms=Math.min(12,W.dungeonRooms+1);toast('دنجن متصل • الغرف المكتشفة '+W.dungeonRooms+'/12')});
+ addBtn('talk70','💬',()=>{W.relationships++;toast('تفاعل NPC • العلاقة والذاكرة المحلية +1')});
+ setInterval(()=>{try{localStorage.setItem('originalWorld70',JSON.stringify(W))}catch(e){}},5000);
+})();
+</script></body>
 </html>
