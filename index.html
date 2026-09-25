@@ -1047,4 +1047,86 @@ function visualPolish110(t){
 const needle='drawWorldDetail();drawMountVisual();';
 if(!h.includes(needle)){return}
 })();
-</script>>
+</script>>\n
+<script id="MILESTONE230_GAMEPLAY_INTEGRATION">
+(()=>{if(window.MILESTONE230_GAMEPLAY_INTEGRATION)return;window.MILESTONE230_GAMEPLAY_INTEGRATION=true;
+/* دمج أنظمة اللعب المتبقية داخل نفس الملف: سحب السيف، حركة/قتال، رفقاء، ذكاء NPC، تفاصيل عالم، جرد وترقية، وحفظ أوفلاين. */
+window.swordState230={drawn:false,anim:0};
+function sword230(draw){window.swordState230.drawn=!!draw;window.swordBlend=draw?1:0;window.swordState230.anim=draw?1:0;}
+const oldSwordBtn=document.getElementById('sword');
+if(oldSwordBtn)oldSwordBtn.addEventListener('click',()=>sword230(!window.swordState230.drawn));
+const oldAtkBtn=document.getElementById('atk');
+if(oldAtkBtn)oldAtkBtn.addEventListener('click',()=>{sword230(true);setTimeout(()=>{if(!p.attack)sword230(false)},700)});
+/* إغلاق السيف بعد القتال/بعد مهلة قصيرة */
+setInterval(()=>{if(window.swordState230.anim>0)window.swordState230.anim=Math.max(0,window.swordState230.anim-.06);if(window.swordState230.drawn&&!p.attack&&!p.magic&&window.swordState230.anim<=0)sword230(false)},900);
+
+/* حركة NPC أهدأ مع أدوار واضحة */
+window.npcLife230=(n,t)=>{
+ if(!n)return;
+ n.life=n.life||{job:n.role||'مدني',mood:'هادئ',home:n.home||false,friend:0};
+ const phase=(t*.00025+(n.id||0));
+ n.x+=(Math.sin(phase)*.012);
+ n.z+=(Math.cos(phase*.83)*.012);
+ n.life.mood=Math.sin(phase)>.35?'سعيد':Math.sin(phase)<-.35?'متوتر':'هادئ';
+};
+
+/* رفقاء حقيقيون بصريًا من المجسمات الإجرائية الحالية */
+window.companionDraw230=(t)=>{
+ const count=Math.min(5,Math.max(0,petCount||0));
+ for(let i=0;i<count;i++){
+  const a=t*.00055+i*1.256,d=1.6+i*.25;
+  const x=p.x+Math.cos(a)*d,z=p.z+Math.sin(a)*d;
+  const types=['wolf','fox','bear','deer','dragon'];
+  if(typeof drawFantasyCreature==='function')drawFantasyCreature(x,Math.max(terrain(x,z)+.1,p.y-.8),z,.48,types[i%types.length],a);
+ }
+};
+
+/* تفاصيل عالم إضافية: أطلال، أبراج، أشجار/مبانٍ أكثر بدون سيارات أو طائرات */
+window.worldDetail230=(t)=>{
+ try{
+  const cx=Math.floor(p.x/CH),cz=Math.floor(p.z/CH);
+  for(let dx=-2;dx<=2;dx++)for(let dz=-2;dz<=2;dz++){
+   const q=makeChunk(cx+dx,cz+dz);
+   if(q.landmark){
+    const x=(cx+dx)*CH+7,z=(cz+dz)*CH+7;
+    const h=q.landmark==='قلعة'?5:q.landmark==='برج سحري'?7:2.5;
+    draw(x,terrain(x,z)+h/2,z,.7,h/2,.7,q.landmark==='كهف'?[.08,.07,.06,1]:[.25,.20,.16,1],t*.00015);
+    if(q.landmark==='برج سحري')draw(x,terrain(x,z)+h+.4,z,.25,.25,.25,[.35,.15,1,1],t*.001);
+   }
+  }
+ }catch(e){}
+};
+const oldFinal230=window.finalRenderSystems;
+if(typeof oldFinal230==='function'){
+ window.finalRenderSystems=function(t){
+  oldFinal230(t);
+  try{companionDraw230(t);worldDetail230(t)}catch(e){}
+ };
+}
+/* ترقية الجرد بدون كسر المتغيرات القديمة */
+window.inventory230={wood:0,ore:0,herb:0,fish:0,crystal:0,coins:999999999,gems:999999999,weaponLevel:1,armorLevel:1};
+window.upgrade230=()=>{
+ const inv=window.inventory230;
+ inv.ore+=3;inv.crystal+=1;inv.weaponLevel++;inv.armorLevel++;
+ if(typeof resources==='object'){resources.ore=(resources.ore||0)+3}
+ if(typeof improveEquipment==='function')try{improveEquipment()}catch(e){}
+ const z=document.getElementById('zone');if(z)z.textContent='ترقية كاملة: السيف والدرع والمعدات • المستوى '+inv.weaponLevel;
+ try{localStorage.setItem('inventory230',JSON.stringify(inv))}catch(e){}
+};
+const up=document.getElementById('upgrade');if(up)up.addEventListener('click',window.upgrade230);
+
+/* حفظ أوفلاين شامل */
+window.save230=()=>{
+ try{localStorage.setItem('game230',JSON.stringify({
+  version:230,x:p.x,y:p.y,z:p.z,level:p.level,hp:p.hp,xp:xp||0,
+  resources:window.resources||{},inventory:window.inventory230,
+  pets:petCount||0,petPower:petPower||0,world:window.final200?.world||1,
+  offline:true,noLogin:true,noRealMoney:true
+ }))}catch(e){}
+};
+const sv=document.getElementById('save');if(sv)sv.addEventListener('click',window.save230);
+try{const q=JSON.parse(localStorage.getItem('inventory230')||'null');if(q)Object.assign(window.inventory230,q)}catch(e){}
+setInterval(()=>{try{for(const c of chunks.values())for(const n of(c.npcs||[]))npcLife230(n,performance.now())}catch(e){}},500);
+window.addEventListener('beforeunload',window.save230);
+})();
+</script>
