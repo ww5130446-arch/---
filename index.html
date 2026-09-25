@@ -622,5 +622,19 @@ if(!window.__livingWorld){window.__livingWorld=true;
  addBtn('talk70','💬',()=>{W.relationships++;toast('تفاعل NPC • العلاقة والذاكرة المحلية +1')});
  setInterval(()=>{try{localStorage.setItem('originalWorld70',JSON.stringify(W))}catch(e){}},5000);
 })();
+</script>
+<script id="MILESTONE80_WORLD_INTERACTION">
+(()=>{const panel=document.getElementById('worldSystems70');if(!panel)return;
+const W=window.originalWorld80=JSON.parse(localStorage.getItem('originalWorld80')||'{"doors":0,"loot":0,"craft":0,"equipment":0,"magic":0,"discoveries":0}');
+const toast=m=>{panel.textContent=m;clearTimeout(panel._t);panel._t=setTimeout(()=>panel.textContent='عالم حي • استكشاف • قتال • صناعة • اكتشاف',2400)};
+const add=(id,label,fn)=>{if(document.getElementById(id))return;const d=document.createElement('div');d.className='btn';d.id=id;d.textContent=label;const r=document.querySelector('.right');if(r){r.appendChild(d);d.addEventListener('click',fn)}};
+add('door80','🚪',()=>{W.doors++;toast('أبواب ومداخل العالم • تم فتح مدخل جديد')});
+add('loot80','💎',()=>{W.loot++;toast('غنيمة مخفية اكتُشفت • إجمالي الغنائم '+W.loot)});
+add('craft80','🔨',()=>{W.craft++;toast('صناعة حقيقية داخل العالم • مستوى الصناعة '+W.craft)});
+add('equip80','🛡️',()=>{W.equipment++;toast('تطوير السلاح والدرع والملابس • '+W.equipment)});
+add('magic80','✨',()=>{W.magic++;toast('تطوير مدرسة السحر • مستوى '+W.magic)});
+add('discover80','🗺️',()=>{W.discoveries++;toast('اكتشاف جديد على الخريطة • '+W.discoveries)});
+setInterval(()=>{try{localStorage.setItem('originalWorld80',JSON.stringify(W))}catch(e){}},5000);
+})();
 </script></body>
 </html>
