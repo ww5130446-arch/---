@@ -294,6 +294,13 @@ function advanceWorldAI(){
  }
  state.aiTick=(state.aiTick||0)+1; save(); msg.textContent='الذكاء الحي تطور • '+count+' شخصية نشطة حولك';
 }
+\n
+function advanceWorldLife(){
+ state.weatherCycle=(state.weatherCycle||0)+1; state.worldEvents=(state.worldEvents||0)+1;
+ state.farmLevel=Math.max(state.farmLevel||0,2); state.fishCount=(state.fishCount||0)+5;
+ state.petPower=(state.petPower||0)+25; updateHud(); save();
+ msg.textContent='تطور العالم: طقس • أحداث حية • مزرعة • صيد • مخلوقات';
+}
 \nfunction render(t){let dt=Math.min(.033,(t-(render.lt||t))/1000);render.lt=t;gameTime=(gameTime+dt*.18)%24;swordBlend+=(swordTarget-swordBlend)*Math.min(1,dt*12);let fx=Math.sin(camA),fz=Math.cos(camA),rx=Math.cos(camA),rz=-Math.sin(camA);let ix=joyX+(keys.a?-1:0)+(keys.d?1:0),iz=joyY+(keys.w?-1:0)+(keys.s?1:0),l=Math.hypot(ix,iz);if(l>1){ix/=l;iz/=l}let sp=p.mounted?12:7;if(l>.05){p.x+=(rx*ix+fx*iz)*sp*dt;p.z+=(rz*ix+fz*iz)*sp*dt;p.ang=Math.atan2(rx*ix+fx*iz,rz*ix+fz*iz)}let gy=terrain(p.x,p.z)+1.1;if(p.y>gy||p.vy>0){p.vy-=14*dt;p.y+=p.vy*dt;if(p.y<gy){p.y=gy;p.vy=0}}if(p.attack>0){p.attack-=dt;if(p.attack<=0){swordTarget=0;p.sword=false}}if(p.magic>0)p.magic-=dt;
 let ex=p.x-fx*camD,ez=p.z-fz*camD,ey=p.y+4.8;VP=mul(persp(1,W/H,.1,420),look(ex,ey,ez,p.x,p.y+1.3,p.z));let night=Math.max(0,Math.min(1,Math.abs(gameTime-12)/12));gl.clearColor(.025+.04*(1-night),.045+.07*(1-night),.08+.10*(1-night),1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);worldDraw();drawWorldRoads();drawWorldInteriors();drawPets(t);
 let br=p.ang;let bob=l>.05?Math.sin(t*.012)*.035:0;drawAnimeHuman(p.x,p.y+bob,p.z,1.0,"hero",br,"sword",true);
