@@ -25,7 +25,7 @@ canvas{width:100%;height:100%;display:block}.hud{position:fixed;inset:0;pointer-
 <div class="top"><div class="pill" id="zone">المنطقة: السهول</div><div class="pill" id="stats">المستوى 1 • HP 100</div><div class="pill">مال ∞ • جواهر ∞</div></div>
 <div class="cross"></div>
 <div class="left"><div class="joy"></div><div class="knob" id="knob"></div></div>
-<div class="right"><div class="btn" id="sword">سيف</div><div class="btn" id="atk">هجوم</div><div class="btn" id="magic">سحر</div><div class="btn" id="jump">قفز</div><div class="btn" id="mount">ركوب</div><div class="btn" id="save">حفظ</div></div>
+<div class="right"><div class="btn" id="sword">سيف</div><div class="btn" id="atk">هجوم</div><div class="btn" id="magic">سحر</div><div class="btn" id="jump">قفز</div><div class="btn" id="mount">ركوب</div><div class="btn" id="fly">طيران</div><div class="btn" id="egg">بيض</div><div class="btn" id="fish">صيد</div><div class="btn" id="farm">مزرعة</div><div class="btn" id="save">حفظ</div></div>
 </div>
 <script>
 const C=document.getElementById('c'),gl=C.getContext('webgl',{antialias:true});
@@ -64,6 +64,28 @@ document.getElementById('jump').onclick=()=>{if(p.y<=terrain(p.x,p.z)+1.25){p.vy
 document.getElementById('mount').onclick=()=>p.mounted=!p.mounted;
 document.getElementById('save').onclick=()=>localStorage.setItem('magic_world_save',JSON.stringify({x:p.x,y:p.y,z:p.z,level:p.level}));
 try{let s=JSON.parse(localStorage.getItem('magic_world_save'));if(s){p.x=s.x;p.y=s.y;p.z=s.z;p.level=s.level}}catch(e){}
+
+let flying=false,flyV=0,petCount=0,petPower=0,fishCount=0,farmLevel=0,eggs=3;
+const petTypes=['ذئب','ثعلب','قط','نمر','أسد','دب','غزال','أرنب','خنزير بري','نسر','صقر','بومة','تنين صغير','روح نار','روح ماء','روح ريح','روح أرض','جني','فراشة سحرية','وحش غابة'];
+const petNames=['رفيق','حارس','صياد','مغامر','سريع','ساحر','نبيل','شرس','لطيف','أسطوري'];
+function hatchPet(){
+ if(eggs<=0){eggs=3;document.getElementById('zone').textContent='حصلت على 3 بيضات جديدة مجانًا';}
+ eggs--;petCount++;petPower+=1+Math.floor(Math.random()*5);
+ document.getElementById('zone').textContent='فقست بيضة: '+petTypes[petCount%petTypes.length]+' • الرفقاء: '+petCount;
+}
+function fish(){
+ fishCount++; if(fishCount%5===0)petPower++;
+ document.getElementById('zone').textContent='صيد السمك: '+fishCount+' • بدون مهمات إجبارية';
+}
+function farm(){
+ farmLevel++;petPower+=2;
+ document.getElementById('zone').textContent='المزرعة الآلية مستوى '+farmLevel+' • تجمع الموارد تلقائيًا';
+}
+document.getElementById('fly').onclick=()=>{flying=!flying;if(flying){p.mounted=true;flyV=4}else p.y=Math.max(p.y,terrain(p.x,p.z)+1.2)};
+document.getElementById('egg').onclick=hatchPet;
+document.getElementById('fish').onclick=fish;
+document.getElementById('farm').onclick=farm;
+
 let chunks=new Map(),CH=32,R=3;
 function makeChunk(cx,cz){let key=cx+','+cz;if(chunks.has(key))return chunks.get(key);let o={trees:[],buildings:[],npcs:[],creatures:[]};let b=biome(cx*CH,cz*CH);let r=()=>hash(cx*1000+o.trees.length,cz*1000+o.trees.length+9);
 for(let i=0;i<14;i++){let x=cx*CH+(hash(cx*17+i,cz*23)-.5)*CH,z=cz*CH+(hash(cx*31+i,cz*11)-.5)*CH;if(Math.hypot(x-p.x,z-p.z)<3)continue;o.trees.push({x,z,h:1.5+r()*2})}
@@ -79,12 +101,22 @@ for(let b of q.buildings){let y=terrain(b.x,b.z);draw(b.x,y+b.h/2,b.z,b.w,b.h/2,
 for(let t of q.trees){let y=terrain(t.x,t.z);draw(t.x,y+t.h*.45,t.z,.22,t.h*.45,.22,[.3,.16,.06,1]);draw(t.x,y+t.h*1.15,t.z,1,1.1,1,[.05,.28,.08,1])}
 for(let n of q.npcs){n.t+=.008;let x=n.x+Math.cos(n.t+n.a)*1.8,z=n.z+Math.sin(n.t+n.a)*1.8,y=terrain(x,z);draw(x,y+1,z,.32,1,.28,[.25,.4,.8,1],n.t+n.a);draw(x,y+2.1,z,.27,.27,.27,[.75,.55,.4,1])}
 for(let a of q.creatures){a.t+=.012;let x=a.x+Math.cos(a.t+a.a)*2,z=a.z+Math.sin(a.t+a.a)*2,y=terrain(x,z);draw(x,y+.55,z,.65,.55,.9,a.type==='ذئب'?[.22,.22,.25,1]:[.55,.45,.3,1],a.t+a.a);draw(x,y+1.1,z,.38,.38,.38,[.4,.3,.25,1])}}}
+
+function drawPets(t){
+ const pcx=Math.floor(p.x/CH),pcz=Math.floor(p.z/CH);
+ for(let i=0;i<Math.min(petCount,6);i++){
+   let a=t*.0007+i*1.047,x=p.x+Math.cos(a)*(2.2+i*.18),z=p.z+Math.sin(a)*(2.2+i*.18),y=terrain(x,z)+.45+(flying?.5:0);
+   let c=[.25+.05*(i%4),.3+.06*(i%3),.55+.05*(i%5),1];
+   draw(x,y,z,.42,.38,.58,c,a+1.57); draw(x,y+.55,z,.25,.25,.25,[.75,.55,.4,1]);
+ }
+}
+
 function render(t){let dt=Math.min(.033,(t-(render.lt||t))/1000);render.lt=t;let fx=Math.sin(camA),fz=Math.cos(camA),rx=Math.cos(camA),rz=-Math.sin(camA);let ix=joyX+(keys.a?-1:0)+(keys.d?1:0),iz=joyY+(keys.w?-1:0)+(keys.s?1:0),l=Math.hypot(ix,iz);if(l>1){ix/=l;iz/=l}let sp=p.mounted?12:7;if(l>.05){p.x+=(rx*ix+fx*iz)*sp*dt;p.z+=(rz*ix+fz*iz)*sp*dt;p.ang=Math.atan2(rx*ix+fx*iz,rz*ix+fz*iz)}let gy=terrain(p.x,p.z)+1.1;if(p.y>gy||p.vy>0){p.vy-=14*dt;p.y+=p.vy*dt;if(p.y<gy){p.y=gy;p.vy=0}}if(p.attack>0)p.attack-=dt;if(p.magic>0)p.magic-=dt;
-let ex=p.x-fx*camD,ez=p.z-fz*camD,ey=p.y+4.8;VP=mul(persp(1,W/H,.1,420),look(ex,ey,ez,p.x,p.y+1.3,p.z));gl.clearColor(.03,.06,.1,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);worldDraw();
+let ex=p.x-fx*camD,ez=p.z-fz*camD,ey=p.y+4.8;VP=mul(persp(1,W/H,.1,420),look(ex,ey,ez,p.x,p.y+1.3,p.z));gl.clearColor(.03,.06,.1,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);worldDraw();drawPets(t);
 let br=p.ang;draw(p.x,p.y+1,p.z,.45,1,.3,[.18,.38,.85,1],br);draw(p.x,p.y+2.15,p.z,.31,.31,.31,[.8,.6,.45,1]);let sw=p.attack>0?Math.sin((.5-p.attack)*18)*1.5:0;draw(p.x+Math.sin(br)*.52,p.y+1.1,p.z+Math.cos(br)*.52,.12,.55,.12,[.8,.65,.45,1],br+sw);draw(p.x-Math.sin(br)*.52,p.y+1.1,p.z-Math.cos(br)*.52,.12,.55,.12,[.8,.65,.45,1],br-sw);
 if(p.sword){let sa=p.attack>0?br+1.2:br;draw(p.x+Math.sin(sa)*.72,p.y+1.35,p.z+Math.cos(sa)*.72,.08,.82,.08,[.75,.8,.9,1],sa)}else draw(p.x-Math.sin(br)*.38,p.y+1.35,p.z-Math.cos(br)*.38,.07,.65,.07,[.75,.8,.9,1],br+.4);
 if(p.magic>0)for(let k=0;k<10;k++){let a=t*.004+k*.628;draw(p.x+Math.cos(a)*1.4,p.y+1.2+Math.sin(a)*.5,p.z+Math.sin(a)*1.4,.13,.13,.13,[.3,.7,1,1])}
-let b=biome(p.x,p.z);document.getElementById('zone').textContent='المنطقة: '+b[0]+' • العالم: '+Math.floor(p.x)+' / '+Math.floor(p.z);document.getElementById('stats').textContent='المستوى '+p.level+' • HP '+p.hp+' • '+(p.mounted?'راكب':'حر')+' • '+(p.sword?'السيف مسحوب':'السيف على الظهر');requestAnimationFrame(render)}
+let b=biome(p.x,p.z);document.getElementById('zone').textContent='المنطقة: '+b[0]+' • العالم: '+Math.floor(p.x)+' / '+Math.floor(p.z);document.getElementById('stats').textContent='المستوى '+p.level+' • HP '+p.hp+' • '+(flying?'طائر':'حر')+' • رفقاء '+petCount+' • بيض '+eggs+' • '+(p.sword?'السيف مسحوب':'السيف على الظهر');requestAnimationFrame(render)}
 requestAnimationFrame(render);
 </script>
 </body>
