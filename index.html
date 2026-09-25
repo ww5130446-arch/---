@@ -515,5 +515,65 @@ if(!window.__livingWorld){window.__livingWorld=true;
  document.body.appendChild(badge);
 }
 }catch(e){}})();
-</script></body>
+</script>
+<script id="milestone50">
+/* 50% — طبقة لعب حقيقية مضافة فوق نفس العالم: حياة NPC، سجل 100 مخلوق، مصنع موارد، حفظ تلقائي */
+(()=>{
+  if(window.__milestone50)return; window.__milestone50=true;
+  const z=document.getElementById('zone');
+  const petElements=['نار','ماء','ريح','أرض','جليد','نور','ظل','برق','روح','طبيعة'];
+  const petRaces=['ذئب','ثعلب','قط','نمر','أسد','دب','غزال','أرنب','خنزير بري','نسر','صقر','بومة','تنين','جني','روح','وحش'];
+  const petRoster=[];
+  for(let i=0;i<100;i++) petRoster.push({id:i+1,name:petRaces[i%petRaces.length]+' '+(i+1),element:petElements[i%petElements.length],power:10+(i%25)*4,level:1+(i%10)});
+  window.petRoster=petRoster;
+  window.petRosterIndex=window.petRosterIndex||0;
+  window.production=window.production||{wood:0,ore:0,herb:0,fish:0,crystal:0,level:1};
+  window.worldClock=window.worldClock||{day:1,hour:8,weather:'صافٍ'};
+  window.npcLifeTick=window.npcLifeTick||0;
+  const weather=['صافٍ','غائم','مطر','ضباب','ريح'];
+  function livingTick(){
+    window.npcLifeTick++;
+    window.worldClock.hour+=0.25;
+    if(window.worldClock.hour>=24){window.worldClock.hour=0;window.worldClock.day++;}
+    if(window.npcLifeTick%20===0)window.worldClock.weather=weather[(window.worldClock.day+window.npcLifeTick/20)%weather.length|0];
+    let active=0;
+    if(typeof chunks!=='undefined') for(const q of chunks.values()) for(const n of (q.npcs||[])){
+      active++;
+      n.lifeState=n.lifeState||{job:'تجول',home:null,friend:0,work:0};
+      n.lifeState.work=(n.lifeState.work+1)%100;
+      if(n.lifeState.work<45)n.lifeState.job=n.role==='تاجر'?'تجارة':n.role==='محارب'?'حراسة':'تدريب';
+      else n.lifeState.job='تجول';
+      n.friend=Math.max(0,Math.min(100,(n.friend||0)+((n.aiTick||0)%17===0?1:0)));
+      if(!n.identity)n.identity=makeIdentity(n.id||active);
+      n.identity.memoryCount=(n.identity.memoryCount||0)+(n.friend>50?1:0);
+    }
+    if(window.production.level>0){
+      const lv=window.production.level;
+      window.production.wood+=lv;
+      window.production.ore+=Math.max(1,lv>>1);
+      window.production.herb+=lv;
+      if(npcLifeTick%4===0)window.production.fish+=1;
+      if(npcLifeTick%12===0)window.production.crystal+=Math.max(1,lv>>2);
+    }
+    if(npcLifeTick%40===0 && typeof resources!=='undefined'){
+      resources.wood+=window.production.wood;resources.ore+=window.production.ore;resources.herb+=window.production.herb;
+      window.production.wood=window.production.ore=window.production.herb=0;
+    }
+    if(npcLifeTick%10===0) z.textContent='العالم حي • يوم '+worldClock.day+' • '+Math.floor(worldClock.hour)+':00 • طقس '+worldClock.weather+' • NPC نشط '+active;
+  }
+  setInterval(livingTick,1000);
+  setInterval(()=>{try{
+    localStorage.setItem('magic_world_live',JSON.stringify({petRosterIndex,production:window.production,worldClock:window.worldClock,npcLifeTick,offline:true}));
+    if(typeof p!=='undefined')localStorage.setItem('magic_world_save',JSON.stringify({x:p.x,y:p.y,z:p.z,level:p.level,hp:p.hp,xp,resources,petCount,petPower,fishCount,farmLevel,eggs,gameTime,coins,craftLevel,equipment,magicLevels,petRosterIndex,production:window.production,worldClock:window.worldClock,offline:true}));
+  }catch(e){}},10000);
+  const panel=document.createElement('div');panel.id='milestone50Panel';
+  panel.innerHTML='<b>حياة العالم</b><br><span id="m50npc">NPC: —</span><br><span id="m50pet">مخلوقات مسجلة: 100</span><br><span id="m50prod">الإنتاج: يعمل</span><br><span id="m50weather">الطقس: صافٍ</span>';
+  Object.assign(panel.style,{position:'fixed',left:'10px',top:'62px',zIndex:10000,padding:'8px 10px',borderRadius:'12px',background:'rgba(8,14,24,.82)',border:'1px solid #ffffff25',color:'#fff',font:'11px system-ui',lineHeight:'1.55',pointerEvents:'none'});
+  document.body.appendChild(panel);
+  setInterval(()=>{const ns=document.getElementById('m50npc'),ws=document.getElementById('m50weather');let count=0;if(typeof chunks!=='undefined')for(const q of chunks.values())count+=(q.npcs||[]).length;if(ns)ns.textContent='NPC نشط: '+count;if(ws)ws.textContent='الطقس: '+worldClock.weather;},1000);
+  document.getElementById('egg').addEventListener('click',()=>{window.petRosterIndex=(window.petRosterIndex+1)%100;const pet=petRoster[window.petRosterIndex];petCount=Math.max(petCount,window.petRosterIndex+1);petPower+=pet.power;z.textContent='مخلوق جديد: '+pet.name+' • '+pet.element+' • قوة '+pet.power+' • من سجل 100 مخلوق';});
+  document.getElementById('farm').addEventListener('click',()=>{window.production.level=Math.min(50,window.production.level+1);z.textContent='المصنع/المزرعة تطور إلى المستوى '+window.production.level+' • إنتاج تلقائي مستمر';});
+})();
+</script>
+</body>
 </html>
