@@ -575,5 +575,33 @@ if(!window.__livingWorld){window.__livingWorld=true;
   document.getElementById('farm').addEventListener('click',()=>{window.production.level=Math.min(50,window.production.level+1);z.textContent='المصنع/المزرعة تطور إلى المستوى '+window.production.level+' • إنتاج تلقائي مستمر';});
 })();
 </script>
+
+<script id="milestone60">
+/* 60% — مرحلة جديدة: نظام رفاق/بيض/طيران/صيد/مصنع وواجهة لعب موحدة. لا يعتمد على الإنترنت. */
+(()=>{
+ if(window.__milestone60)return; window.__milestone60=true;
+ const root=document.createElement('div');root.id='m60';
+ root.innerHTML='<div class="m60-title">نظام المغامرة</div><div class="m60-row"><button id="m60Team">الرفاق</button><button id="m60Egg">البيض</button><button id="m60Mount">الطيران</button><button id="m60Fish">الصيد</button><button id="m60Factory">المصنع</button></div><div id="m60Info">كل الأنظمة تعمل أوفلاين</div>';
+ root.style.cssText='position:fixed;right:10px;top:120px;z-index:10001;width:min(300px,calc(100vw - 20px));padding:10px;border-radius:14px;background:rgba(7,12,22,.9);border:1px solid #ffffff25;color:#fff;font:12px system-ui;direction:rtl;backdrop-filter:blur(5px)';
+ document.body.appendChild(root);
+ const info=document.getElementById('m60Info');
+ const say=x=>{info.textContent=x;const z=document.getElementById('zone');if(z)z.textContent=x};
+ const team=[];
+ function addPet(){
+   const idx=(window.petRosterIndex||0)%100; const pet=(window.petRoster||[])[idx];
+   if(!pet)return;say('الرفيق '+pet.name+' انضم للفريق • عنصر '+pet.element+' • مستوى '+pet.level);team.push(pet);window.petRosterIndex=(idx+1)%100;if(typeof petCount!=='undefined')petCount=Math.max(petCount,team.length);if(typeof petPower!=='undefined')petPower+=pet.power;
+ }
+ document.getElementById('m60Team').onclick=()=>say('الفريق الحالي: '+Math.min(team.length,6)+' رفاق نشطين • يمكنهم القتال معك');
+ document.getElementById('m60Egg').onclick=addPet;
+ document.getElementById('m60Mount').onclick=()=>{if(typeof flying!=='undefined'){flying=!flying;if(typeof p!=='undefined')p.mounted=flying;say(flying?'تم استدعاء الجواد الطائر • تحليق حر':'تم الهبوط • عودة للحركة الأرضية')}};
+ document.getElementById('m60Fish').onclick=()=>{if(typeof fishCount!=='undefined')fishCount++;if(typeof petPower!=='undefined')petPower+=3;say('صيد ناجح • سمكة جديدة +3 قوة رفاق');};
+ document.getElementById('m60Factory').onclick=()=>{if(window.production){window.production.level=Math.min(50,(window.production.level||1)+1);say('المصنع الآلي مستوى '+window.production.level+' • التعدين والزراعة والجمع والترقية مستمرة تلقائيًا');}};
+ setInterval(()=>{try{
+   if(window.production&&typeof resources!=='undefined'){
+    const lv=Math.max(1,window.production.level||1);resources.wood+=Math.max(0,Math.floor(lv/3));resources.ore+=Math.max(0,Math.floor(lv/4));resources.herb+=Math.max(0,Math.floor(lv/3));
+   }
+ }catch(e){}},5000);
+})();
+</script>
 </body>
 </html>
