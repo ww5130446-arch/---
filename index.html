@@ -213,5 +213,27 @@ if(p.magic>0)for(let k=0;k<10;k++){let a=t*.004+k*.628;draw(p.x+Math.cos(a)*1.4,
 let b=biome(p.x,p.z);document.getElementById('zone').textContent='المنطقة: '+b[0]+' • العالم: '+Math.floor(p.x)+' / '+Math.floor(p.z);document.getElementById('stats').textContent='المستوى '+p.level+' • XP '+xp+'/'+(p.level*20)+' • HP '+p.hp+' • '+(flying?'طائر':'حر')+' • رفقاء '+petCount+' • بيض '+eggs+' • '+(swordBlend>.5?'السيف باليد':'السيف على الظهر')+' • '+Math.floor(gameTime)+':00';requestAnimationFrame(render)}
 requestAnimationFrame(render);
 </script>
-</body>
+
+<style id="world-upgrade-ui">
+#worldUpgradePanel{position:fixed;right:10px;top:10px;z-index:9999;background:rgba(8,12,22,.82);color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:10px;font:14px system-ui;backdrop-filter:blur(6px);max-width:220px}
+#worldUpgradePanel button{margin:3px;padding:8px 10px;border:0;border-radius:9px;background:#27344f;color:#fff}
+#worldUpgradePanel .v{font-weight:700}
+</style>
+<div id="worldUpgradePanel" aria-live="polite">
+<div class="v">العالم المفتوح</div>
+<div>المستوى: <span id="wuLvl">1</span></div>
+<div>الرفقاء: <span id="wuPets">0</span></div>
+<div>الذهب: <span id="wuGold">∞</span></div>
+<button type="button" id="wuSave">حفظ الآن</button>
+<button type="button" id="wuReset">إعادة الظهور</button>
+</div>
+<script>
+(()=>{try{
+const q=id=>document.getElementById(id);
+function refresh(){if(typeof level!=="undefined")q("wuLvl").textContent=level;if(typeof petCount!=="undefined")q("wuPets").textContent=petCount;if(typeof coins!=="undefined")q("wuGold").textContent="∞";}
+q("wuSave").onclick=()=>{try{if(typeof saveGame==="function")saveGame();refresh();}catch(e){}};
+q("wuReset").onclick=()=>{try{if(typeof player!=="undefined"){player.x=0;player.y=2;player.z=0;}refresh();}catch(e){}};
+setInterval(refresh,1000);refresh();
+}catch(e){}})();
+</script></body>
 </html>
