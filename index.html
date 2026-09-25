@@ -205,8 +205,27 @@ function drawPets(t){
  }
 }
 
-function render(t){let dt=Math.min(.033,(t-(render.lt||t))/1000);render.lt=t;gameTime=(gameTime+dt*.18)%24;swordBlend+=(swordTarget-swordBlend)*Math.min(1,dt*12);let fx=Math.sin(camA),fz=Math.cos(camA),rx=Math.cos(camA),rz=-Math.sin(camA);let ix=joyX+(keys.a?-1:0)+(keys.d?1:0),iz=joyY+(keys.w?-1:0)+(keys.s?1:0),l=Math.hypot(ix,iz);if(l>1){ix/=l;iz/=l}let sp=p.mounted?12:7;if(l>.05){p.x+=(rx*ix+fx*iz)*sp*dt;p.z+=(rz*ix+fz*iz)*sp*dt;p.ang=Math.atan2(rx*ix+fx*iz,rz*ix+fz*iz)}let gy=terrain(p.x,p.z)+1.1;if(p.y>gy||p.vy>0){p.vy-=14*dt;p.y+=p.vy*dt;if(p.y<gy){p.y=gy;p.vy=0}}if(p.attack>0){p.attack-=dt;if(p.attack<=0){swordTarget=0;p.sword=false}}if(p.magic>0)p.magic-=dt;
-let ex=p.x-fx*camD,ez=p.z-fz*camD,ey=p.y+4.8;VP=mul(persp(1,W/H,.1,420),look(ex,ey,ez,p.x,p.y+1.3,p.z));let night=Math.max(0,Math.min(1,Math.abs(gameTime-12)/12));gl.clearColor(.025+.04*(1-night),.045+.07*(1-night),.08+.10*(1-night),1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);worldDraw();drawPets(t);
+
+function drawWorldRoads(){
+ const pcx=Math.floor(p.x/CH),pcz=Math.floor(p.z/CH);
+ for(let cx=pcx-R;cx<=pcx+R;cx++)for(let cz=pcz-R;cz<=pcz+R;cz++){
+  const bx=cx*CH,bz=cz*CH;
+  const city=makeChunk(cx,cz).city;
+  const y1=terrain(bx,bz)+.015;
+  if(city){
+   draw(bx,y1,bz,CH*.48,.025,.34,[.12,.12,.13,1]);
+   draw(bx,y1,bz,.34,.026,CH*.48,[.12,.12,.13,1]);
+   draw(bx,y1+.01,bz,CH*.20,.028,.035,[.55,.50,.25,1]);
+   draw(bx,y1+.01,bz,.035,.029,CH*.20,[.55,.50,.25,1]);
+  }
+  const water=biome(bx,bz)[0]==='نهر';
+  if(water){
+   draw(bx,terrain(bx,bz)+.06,bz,CH*.48,.035,.95,[.06,.32,.62,.92]);
+  }
+ }
+}
+\nfunction render(t){let dt=Math.min(.033,(t-(render.lt||t))/1000);render.lt=t;gameTime=(gameTime+dt*.18)%24;swordBlend+=(swordTarget-swordBlend)*Math.min(1,dt*12);let fx=Math.sin(camA),fz=Math.cos(camA),rx=Math.cos(camA),rz=-Math.sin(camA);let ix=joyX+(keys.a?-1:0)+(keys.d?1:0),iz=joyY+(keys.w?-1:0)+(keys.s?1:0),l=Math.hypot(ix,iz);if(l>1){ix/=l;iz/=l}let sp=p.mounted?12:7;if(l>.05){p.x+=(rx*ix+fx*iz)*sp*dt;p.z+=(rz*ix+fz*iz)*sp*dt;p.ang=Math.atan2(rx*ix+fx*iz,rz*ix+fz*iz)}let gy=terrain(p.x,p.z)+1.1;if(p.y>gy||p.vy>0){p.vy-=14*dt;p.y+=p.vy*dt;if(p.y<gy){p.y=gy;p.vy=0}}if(p.attack>0){p.attack-=dt;if(p.attack<=0){swordTarget=0;p.sword=false}}if(p.magic>0)p.magic-=dt;
+let ex=p.x-fx*camD,ez=p.z-fz*camD,ey=p.y+4.8;VP=mul(persp(1,W/H,.1,420),look(ex,ey,ez,p.x,p.y+1.3,p.z));let night=Math.max(0,Math.min(1,Math.abs(gameTime-12)/12));gl.clearColor(.025+.04*(1-night),.045+.07*(1-night),.08+.10*(1-night),1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);worldDraw();drawWorldRoads();drawPets(t);
 let br=p.ang;let bob=l>.05?Math.sin(t*.012)*.035:0;drawAnimeHuman(p.x,p.y+bob,p.z,1.0,"hero",br,"sword",true);
 let sa=br+1.2;let handX=p.x+Math.sin(sa)*.72,handZ=p.z+Math.cos(sa)*.72,backX=p.x-Math.sin(br)*.38,backZ=p.z-Math.cos(br)*.38;let sx=backX+(handX-backX)*swordBlend,sz=backZ+(handZ-backZ)*swordBlend;let sy=p.y+1.35+(p.attack>0?Math.sin((.5-p.attack)*18)*.25:0);draw(sx,sy,sz,.08,.82,.08,[.75,.8,.9,1],br+.4+(swordBlend*.8));
 if(p.magic>0)for(let k=0;k<10;k++){let a=t*.004+k*.628;draw(p.x+Math.cos(a)*1.4,p.y+1.2+Math.sin(a)*.5,p.z+Math.sin(a)*1.4,.13,.13,.13,[.3,.7,1,1])}
