@@ -282,7 +282,10 @@ func _touch_button(parent: Control, label_text: String, a: Vector2, b: Vector2, 
  btn.offset_right = b.x
  btn.offset_bottom = b.y
  btn.button_down.connect(func(): move_touch = dir)
- btn.button_up.connect(func(): if move_touch == dir: move_touch = Vector2.ZERO)
+ btn.button_up.connect(func():
+  if move_touch == dir:
+   move_touch = Vector2.ZERO
+ )
  parent.add_child(btn)
 
 func _action_button(parent: Control, label_text: String, a: Vector2, b: Vector2, callback: Callable) -> void:
