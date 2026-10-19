@@ -1,0 +1,24 @@
+config_version=5
+
+[application]
+config/name="أريليا - عالم فانتازي مفتوح"
+config/description="نسخة Godot 4 أولية قابلة للتطوير"
+run/main_scene="res://scenes/main.tscn"
+
+[display]
+window/handheld/orientation=1
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.42, 0.63, 0.82, 1)
+
+[input]
+move_forward={"deadzone": 0.2, "events": [Object(InputEventKey,"physical_keycode":87)]}
+move_back={"deadzone": 0.2, "events": [Object(InputEventKey,"physical_keycode":83)]}
+move_left={"deadzone": 0.2, "events": [Object(InputEventKey,"physical_keycode":65)]}
+move_right={"deadzone": 0.2, "events": [Object(InputEventKey,"physical_keycode":68)]}
+jump={"deadzone": 0.2, "events": [Object(InputEventKey,"physical_keycode":32)]}
